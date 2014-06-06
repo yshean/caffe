@@ -57,10 +57,21 @@ message NetParameter {
 }
 
 message SolverParameter {
-  optional string train_net = 1; // The proto file for the training net.
-  optional string test_net = 2; // The proto file for the testing net.
+  // {train,test}_net specify a path to a file containing the {train,test} net
+  // parameters; {train,test}_net_param specify the net parameters directly
+  // inside the SolverParameter.
+  //
+  // Only either train_net or train_net_param (not both) should be specified.
+  // You may specify 0 or more test_net and/or test_net_param.  All
+  // nets specified using test_net_param will be tested first, followed by all
+  // nets specified using test_net (each processed in the order specified in
+  // the prototxt).
+  optional string train_net = 1; // The proto filename for the train net.
+  repeated string test_net = 2; // The proto filenames for the test nets.
+  optional NetParameter train_net_param = 21; // Full params for the train net.
+  repeated NetParameter test_net_param = 22; // Full params for the test nets.
   // The number of iterations for each testing phase.
-  optional int32 test_iter = 3 [default = 0];
+  repeated int32 test_iter = 3;
   // The number of iterations between two testing phases.
   optional int32 test_interval = 4 [default = 0];
   optional bool test_compute_loss = 19 [default = false];
@@ -101,33 +112,36 @@ message SolverState {
   repeated BlobProto history = 3; // The history for sgd solvers
 }
 
+// NOTE
 // Update the next available ID when you add a new LayerParameter field.
 //
-// LayerParameter next available ID: 23 (last added: memory_data_param)
+// LayerParameter next available ID: 25 (last added: eltwise_param)
 message LayerParameter {
   repeated string bottom = 2; // the name of the bottom blobs
   repeated string top = 3; // the name of the top blobs
   optional string name = 4; // the layer name
 
+  // NOTE
   // Add new LayerTypes to the enum below in lexicographical order (other than
   // starting with NONE), starting with the next available ID in the comment
   // line above the enum. Update the next available ID when you add a new
   // LayerType.
   //
-  // LayerType next available ID: 30 (last added: MEMORY_DATA)
+  // LayerType next available ID: 32 (last added: THRESHOLD)
   enum LayerType {
     // "NONE" layer type is 0th enum element so that we don't cause confusion
     // by defaulting to an existent LayerType (instead, should usually error if
     // the type is unspecified).
     NONE = 0;
     ACCURACY = 1;
+    ARGMAX = 30;
     BNLL = 2;
     CONCAT = 3;
     CONVOLUTION = 4;
     DATA = 5;
     DROPOUT = 6;
     EUCLIDEAN_LOSS = 7;
-    ELTWISE_PRODUCT = 25;
+    ELTWISE = 25;
     FLATTEN = 8;
     HDF5_DATA = 9;
     HDF5_OUTPUT = 10;
@@ -149,6 +163,7 @@ message LayerParameter {
     SPLIT = 22;
     TANH = 23;
     WINDOW_DATA = 24;
+    THRESHOLD = 31;
   }
   optional LayerType type = 5; // the layer type from the enum above
 
@@ -161,10 +176,13 @@ message LayerParameter {
   repeated float weight_decay = 8;
 
   // Parameters for particular layer types.
+  // Parameters next available ID: 26 (last added: ThresholdParameter)
+  optional ArgMaxParameter argmax_param = 23;
   optional ConcatParameter concat_param = 9;
   optional ConvolutionParameter convolution_param = 10;
   optional DataParameter data_param = 11;
   optional DropoutParameter dropout_param = 12;
+  optional EltwiseParameter eltwise_param = 24;
   optional HDF5DataParameter hdf5_data_param = 13;
   optional HDF5OutputParameter hdf5_output_param = 14;
   optional ImageDataParameter image_data_param = 15;
@@ -175,11 +193,18 @@ message LayerParameter {
   optional PoolingParameter pooling_param = 19;
   optional PowerParameter power_param = 21;
   optional WindowDataParameter window_data_param = 20;
+  optional ThresholdParameter threshold_param = 25;
 
   // DEPRECATED: The layer parameters specified as a V0LayerParameter.
   // This should never be used by any code except to upgrade to the new
   // LayerParameter specification.
   optional V0LayerParameter layer = 1;
+}
+
+// Message that stores parameters used by ArgMaxLayer
+message ArgMaxParameter {
+  // If true produce pairs (argmax, maxval)
+  optional bool out_max_val = 1 [default = false];
 }
 
 // Message that stores parameters used by ConcatLayer
@@ -227,6 +252,21 @@ message DataParameter {
 // Message that stores parameters used by DropoutLayer
 message DropoutParameter {
   optional float dropout_ratio = 1 [default = 0.5]; // dropout ratio
+}
+
+// Message that stores parameters used by EltwiseLayer
+message EltwiseParameter {
+  enum EltwiseOp {
+    PROD = 0;
+    SUM = 1;
+  }
+  optional EltwiseOp operation = 1 [default = SUM]; // element-wise operation
+  repeated float coeff = 2; // blob-wise coefficient for SUM operation
+}
+
+// Message that stores parameters used by ThresholdLayer
+message ThresholdParameter {
+  optional float threshold = 1 [default = 0]; // Strictly Positive values
 }
 
 // Message that stores parameters used by HDF5DataLayer

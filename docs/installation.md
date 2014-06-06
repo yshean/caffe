@@ -16,7 +16,7 @@ We have successfully compiled and run Caffe on Ubuntu 12.04, OS X 10.8, and OS X
 
 Caffe depends on several software packages.
 
-<<<<<<< HEAD
+
 * [CUDA](https://developer.nvidia.com/cuda-zone) (5.0, 5.5, or 6.0).
 * [BLAS](http://en.wikipedia.org/wiki/Basic_Linear_Algebra_Subprograms) (provided via ATLAS, MKL, or OpenBLAS).
 * [OpenCV](http://opencv.org/).
@@ -26,9 +26,9 @@ Caffe depends on several software packages.
     * `python`, `numpy (>= 1.7)`, Boost-provided `boost.python`
 * For the MATLAB wrapper
     * MATLAB with the `mex` compiler.
-=======
+
 You will probably need to adjust paths in `Makefile.config` and maybe the `Makefile` itself. Feel free to issue a pull request for a change that may help other people.
->>>>>>> 86a3263fe5035a0caa341f88663d61c60efcddad
+
 
 ### CUDA and BLAS
 
@@ -39,7 +39,9 @@ Caffe requires BLAS as the backend of its matrix and vector computations.
 There are several implementations of this library.
 The choice is yours:
 
-<<<<<<< HEAD
+
+
+
 * [ATLAS](http://math-atlas.sourceforge.net/): free, open source, and so the default for Caffe.
     + Ubuntu: `sudo apt-get install libatlas-base-dev`
     + CentOS/RHEL: `sudo yum install libatlas-devel`
@@ -50,7 +52,8 @@ The choice is yours:
 * [OpenBLAS](http://www.openblas.net/): free and open source; this optimized and parallel BLAS could require more effort to install, although it might offer a speedup.
     1. Install OpenBLAS
     2. Set `BLAS := open` in `Makefile.config`
-=======
+
+
 * [CUDA](https://developer.nvidia.com/cuda-zone) 5.0 or 5.5
 * [boost](http://www.boost.org/) (1.55 preferred)
 * [BLAS](http://en.wikipedia.org/wiki/Basic_Linear_Algebra_Subprograms) by [MKL](http://software.intel.com/en-us/intel-mkl) (though the `dev` branch supports ATLAS and OpenBLAS as alternatives)
@@ -58,19 +61,18 @@ The choice is yours:
 * glog, gflags, protobuf, leveldb, snappy, hdf5
 * For the python wrapper: python, numpy (>= 1.7 preferred), and boost_python
 * For the MATLAB wrapper: MATLAB with mex
->>>>>>> 86a3263fe5035a0caa341f88663d61c60efcddad
+
+
+
 
 ### Python and/or Matlab wrappers (optional)
 
 This is only a requirement if you'd like the Python wrapper for Caffe.
 The main required package is `numpy`, and `Boost` (in "Other dependencies" below) must be compiled with Python support.
 
-<<<<<<< HEAD
 For **OS X**, we highly recommend using the [Anaconda](https://store.continuum.io/cshop/anaconda/) Python distribution, which provides most of the necessary packages, as well as the `hdf5` library dependency.
 If you don't, please use Homebrew -- but beware of potential linking errors!
-=======
-**MKL/BLAS**: the current stable release of Caffe needs Intel MKL as the backend of its matrix and vector computations. The [development version](https://github.com/BVLC/caffe/tree/dev) supports ATLAS and OpenBLAS backends as alternatives (while retaining MKL support). For MKL, you can obtain a [trial license](http://software.intel.com/en-us/intel-mkl) or an [academic license](http://software.intel.com/en-us/intel-education-offerings) (if you are a student).
->>>>>>> 86a3263fe5035a0caa341f88663d61c60efcddad
+
 
 Note that if you use the **Ubuntu** default python, you will need to `apt-get install` the `python-dev` package to have the python headers. You can install any remaining dependencies with
 
@@ -129,7 +131,7 @@ If you're not using Anaconda, include `hdf5` in the list above.
 
 #### 10.9-specific Instructions
 
-In OS X 10.9, clang is the default compiler and uses `libc++` as the standard library.
+In OS X 10.9, clang++ is the default C++ compiler and uses `libc++` as the standard library.
 However, NVIDIA CUDA (even version 6.0) currently links only with `libstdc++`.
 This makes it necessary to change the compilation settings for each of the dependencies.
 
@@ -142,16 +144,18 @@ The prerequisite homebrew formulae are
 
 For each of these formulas, `brew edit FORMULA`, and add the ENV definitions as shown:
 
-```
-    def install
-        #ADD THE FOLLOWING:
-        ENV.append "CXXFLAGS", '-stdlib=libstdc++'
-        ENV.append "CFLAGS", '-stdlib=libstdc++'
-        ENV.append "LDFLAGS", '-stdlib=libstdc++ -lstdc++'
-        #The following is necessary because libtool liks to strip LDFLAGS:
-        ENV.cxx = "/usr/bin/clang -stdlib=libstdc++"
-        ...
-```
+      def install
+          # ADD THE FOLLOWING:
+          ENV.append "CXXFLAGS", "-stdlib=libstdc++"
+          ENV.append "CFLAGS", "-stdlib=libstdc++"
+          ENV.append "LDFLAGS", "-stdlib=libstdc++ -lstdc++"
+          # The following is necessary because libtool likes to strip LDFLAGS:
+          ENV["CXX"] = "/usr/bin/clang++ -stdlib=libstdc++"
+          ...
+
+To edit the formulae in turn, run
+
+    for x in snappy leveldb protobuf gflags glog szip boost homebrew/science/opencv; do brew edit $x; done
 
 After this, run
 
@@ -159,6 +163,14 @@ After this, run
 
 **Note** that the HDF5 dependency is provided by Anaconda Python in this case.
 If you're not using Anaconda, include `hdf5` in the list above.
+
+**Note** that in order to build the caffe python wrappers you must install boost using the --with-python option:
+
+    brew install --build-from-source --with-python --fresh -vd boost
+
+#### Windows
+
+There is an unofficial Windows port of Caffe at [niuzhiheng/caffe:windows](https://github.com/niuzhiheng/caffe). Thanks [@niuzhiheng](https://github.com/niuzhiheng).
 
 ## Compilation
 
