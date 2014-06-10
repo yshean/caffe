@@ -308,14 +308,14 @@ static mxArray* do_get_blobs_info() {
     for (unsigned int i = 0; i < num_blobs; ++i) {
       mxSetField(mx_blobs, i, "name",
         mxCreateString(blob_names[i].c_str()));
-      mxSetField(mx_blobs, j, "num",
-        mxCreateDoubleScalar(layer_blobs[j]->num()));
-      mxSetField(mx_blobs, j, "channels",
-        mxCreateDoubleScalar(layer_blobs[j]->channels()));
-      mxSetField(mx_blobs, j, "height",
-        mxCreateDoubleScalar(layer_blobs[j]->height()));
-      mxSetField(mx_blobs, j, "width",
-        mxCreateDoubleScalar(layer_blobs[j]->width()));
+      mxSetField(mx_blobs, i, "num",
+        mxCreateDoubleScalar(layer_blobs[i]->num()));
+      mxSetField(mx_blobs, i, "channels",
+        mxCreateDoubleScalar(layer_blobs[i]->channels()));
+      mxSetField(mx_blobs, i, "height",
+        mxCreateDoubleScalar(layer_blobs[i]->height()));
+      mxSetField(mx_blobs, i, "width",
+        mxCreateDoubleScalar(layer_blobs[i]->width()));
     }
   }
 
