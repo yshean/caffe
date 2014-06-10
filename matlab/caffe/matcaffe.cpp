@@ -244,12 +244,9 @@ static mxArray* do_get_weights() {
 static mxArray* do_get_layer_weights(const mxArray* const layer_name) {
   const vector<shared_ptr<Layer<float> > >& layers = net_->layers();
   const vector<string>& layer_names = net_->layer_names();
-  if (mxIsChar(layer_name)) {
-    char* c_layer_name = mxArrayToString(layer_name);
-  } else {
-    mexErrMsgTxt("get_layer_weights should provide layer name as a string");
-  }
+  char* c_layer_name = mxArrayToString(layer_name);
   mxArray* mx_layer_weights = NULL;
+
   for (unsigned int i = 0; i < layers.size(); ++i) {
     if (strcmp(layer_names[i],c_layer_name)) {
       vector<shared_ptr<Blob<float> > >& layer_blobs = layers[i]->blobs();
