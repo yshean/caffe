@@ -244,7 +244,7 @@ static mxArray* do_get_layers_info() {
   const vector<shared_ptr<Layer<float> > >& layers = net_->layers();
   const vector<string>& layer_names = net_->layer_names();
 
-  const int num_layers[2] = {layers.size() 1};
+  const int num_layers[2] = {layers.size(), 1};
 
   // Step 1: prepare output array of structures
   mxArray* mx_layers;
@@ -270,7 +270,7 @@ static mxArray* do_get_layers_info() {
         continue;
       }
 
-      const int num_blobs[2] = {layer_blobs.size() 1};
+      const int num_blobs[2] = {layer_blobs.size(), 1};
       mx_blob = mxCreateStructArray(1, num_blobs, 4, blobfnames);
 
       for (unsigned int j = 0; j < layer_blobs.size(); ++j) {
