@@ -8,6 +8,7 @@
 #include <string>  // NOLINT(build/include_order)
 #include <vector>  // NOLINT(build/include_order)
 #include <fstream>  // NOLINT
+#include <stdexcept>
 
 #include "mex.h"
 #include "caffe/caffe.hpp"
@@ -243,13 +244,13 @@ static mxArray* do_get_layers_info() {
   const vector<shared_ptr<Layer<float> > >& layers = net_->layers();
   const vector<string>& layer_names = net_->layer_names();
 
-  int num_layers = layers.size();
+  const int num_layers[2] = {layers.size() 1};
 
   // Step 1: prepare output array of structures
   mxArray* mx_layers;
   {
     const char* fnames[3] = {"name", "type", "blobs"};
-    mx_layers = mxCreateStructArray(1, num_layers, 3, fnames);
+    mx_layers = mxCreateStructArray(2, num_layers, 3, fnames);
   }
 
   // Step 2: copy info into output
@@ -259,22 +260,28 @@ static mxArray* do_get_layers_info() {
     string prev_layer_name = "";
     int mx_layer_index = 0;
     for (unsigned int i = 0; i < layers.size(); ++i) {
-      mxSetField(mx_layers, i, "name", mxCreateString(layer_names[i].c_str()));
-      mxSetField(mx_layers, i, "type", mxCreateString(layers[i]->type_name()));
+      mxSetField(mx_layers, i, "name",
+        mxCreateString(layer_names[i].c_str()));
+      mxSetField(mx_layers, i, "type",
+        mxCreateString(layers[i]->type_name().c_str()));
 
       vector<shared_ptr<Blob<float> > >& layer_blobs = layers[i]->blobs();
-      int num_blobs = layer_blobs.size();
-      if (num_blobs == 0) {
+      if (layer_blobs.size() == 0) {
         continue;
       }
 
+      const int num_blobs[2] = {layer_blobs.size() 1};
       mx_blob = mxCreateStructArray(1, num_blobs, 4, blobfnames);
 
-      for (unsigned int j = 0; j < num_blobs; ++j) {
-        mxSetField(mx_blob, j, "num", layer_blobs[j]->num());
-        mxSetField(mx_blob, j, "channels", layer_blobs[j]->channels());
-        mxSetField(mx_blob, j, "height", layer_blobs[j]->height());
-        mxSetField(mx_blob, j, "width", layer_blobs[j]->width());
+      for (unsigned int j = 0; j < layer_blobs.size(); ++j) {
+        mxSetField(mx_blob, j, "num",
+          mxCreateDoubleScalar(layer_blobs[j]->num());
+        mxSetField(mx_blob, j, "channels",
+          mxCreateDoubleScalar(layer_blobs[j]->channels());
+        mxSetField(mx_blob, j, "height",
+          mxCreateDoubleScalar(layer_blobs[j]->height()));
+        mxSetField(mx_blob, j, "width",
+          mxCreateDoubleScalar(layer_blobs[j]->width()));
       }
       mxSetField(mx_layers, i, "blobs", mx_blob);
     }
@@ -299,11 +306,16 @@ static mxArray* do_get_blobs_info() {
   // Step 2: copy info into output
   {
     for (unsigned int i = 0; i < num_blobs; ++i) {
-      mxSetField(mx_blobs, i, "name", mxCreateString(blob_names[i].c_str()));
-      mxSetField(mx_blobs, j, "num", layer_blobs[j]->num());
-      mxSetField(mx_blobs, j, "channels", layer_blobs[j]->channels());
-      mxSetField(mx_blobs, j, "height", layer_blobs[j]->height());
-      mxSetField(mx_blobs, j, "width", layer_blobs[j]->width());
+      mxSetField(mx_blobs, i, "name",
+        mxCreateString(blob_names[i].c_str()));
+      mxSetField(mx_blobs, j, "num",
+        mxCreateDoubleScalar(layer_blobs[j]->num()));
+      mxSetField(mx_blobs, j, "channels",
+        mxCreateDoubleScalar(layer_blobs[j]->channels()));
+      mxSetField(mx_blobs, j, "height",
+        mxCreateDoubleScalar(layer_blobs[j]->height()));
+      mxSetField(mx_blobs, j, "width",
+        mxCreateDoubleScalar(layer_blobs[j]->width()));
     }
   }
 
