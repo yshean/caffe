@@ -244,12 +244,12 @@ static mxArray* do_get_weights() {
 static mxArray* do_get_layer_weights(const mxArray* const layer_name) {
   const vector<shared_ptr<Layer<float> > >& layers = net_->layers();
   const vector<string>& layer_names = net_->layer_names();
-  if mxIsChar(layer_name){
+  if (mxIsChar(layer_name)) {
     char* c_layer_name = mxArrayToString(layer_name);
   } else {
     mexErrMsgTxt("get_layer_weights should provide layer name as a string");
   }
-
+  mxArray* mx_layer_weights = NULL;
   for (unsigned int i = 0; i < layers.size(); ++i) {
     if (strcmp(layer_names[i],c_layer_name)) {
       vector<shared_ptr<Blob<float> > >& layer_blobs = layers[i]->blobs();
@@ -257,7 +257,7 @@ static mxArray* do_get_layer_weights(const mxArray* const layer_name) {
         continue;
       }
       const mwSize dims[2] = {layer_blobs.size(), 1};
-      mxArray* mx_layer_weights = mxCreateCellArray(2, dims);
+      mx_layer_weights = mxCreateCellArray(2, dims);
       for (unsigned int j = 0; j < layer_blobs.size(); ++j) {
         // internally data is stored as (width, height, channels, num)
         // where width is the fastest dimension
@@ -390,21 +390,21 @@ static void get_blobs_info(MEX_ARGS) {
   plhs[0] = do_get_blobs_info();
 }
 
-static void get_blob_data(MEX_ARGS) {
-  if (nrhs != 1) {
-    LOG(ERROR) << "Only given " << nrhs << " arguments";
-    mexErrMsgTxt("Wrong number of arguments");
-  }
-  plhs[0] = do_get_blobs_data(prhs[0]);
-}
+// static void get_blob_data(MEX_ARGS) {
+//   if (nrhs != 1) {
+//     LOG(ERROR) << "Only given " << nrhs << " arguments";
+//     mexErrMsgTxt("Wrong number of arguments");
+//   }
+//   plhs[0] = do_get_blobs_data(prhs[0]);
+// }
 
-static void get_blob_diff(MEX_ARGS) {
-  if (nrhs != 1) {
-    LOG(ERROR) << "Only given " << nrhs << " arguments";
-    mexErrMsgTxt("Wrong number of arguments");
-  }
-  plhs[0] = do_get_blobs_diff(prhs[0]);
-}
+// static void get_blob_diff(MEX_ARGS) {
+//   if (nrhs != 1) {
+//     LOG(ERROR) << "Only given " << nrhs << " arguments";
+//     mexErrMsgTxt("Wrong number of arguments");
+//   }
+//   plhs[0] = do_get_blobs_diff(prhs[0]);
+// }
 
 static void set_mode_cpu(MEX_ARGS) {
   Caffe::set_mode(Caffe::CPU);
