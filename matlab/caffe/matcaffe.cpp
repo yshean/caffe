@@ -428,7 +428,7 @@ static void set_layer_weights(MEX_ARGS) {
     LOG(ERROR) << "Only given " << nrhs << " arguments";
     mexErrMsgTxt("Wrong number of arguments you need layer_name and cell of weights");
   }
-  do_get_layer_weights(prhs[0],prhs[1]);
+  do_set_layer_weights(prhs[0],prhs[1]);
 }
 
 static void get_layers_info(MEX_ARGS) {
