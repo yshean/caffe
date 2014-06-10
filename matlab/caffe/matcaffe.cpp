@@ -314,7 +314,7 @@ static void do_set_layer_weights(const mxArray* const layer_name,
         LOG(INFO) << dims[0] << " " << dims[1] << " " << dims[2] << " " << dims[3];
         const float* const data_ptr =
             reinterpret_cast<const float* const>(mxGetPr(elem));
-        LOG(INFO) << "elem: " << elem[0] << " " << elem[1];
+        LOG(INFO) << "elem: " << data_ptr[0] << " " << data_ptr[1];
         LOG(INFO) << "count: " << layer_blobs[i]->count();
         switch (Caffe::mode()) {
         case Caffe::CPU:
