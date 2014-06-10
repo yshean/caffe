@@ -248,7 +248,7 @@ static mxArray* do_get_layer_weights(const mxArray* const layer_name) {
   mxArray* mx_layer_weights = NULL;
 
   for (unsigned int i = 0; i < layers.size(); ++i) {
-    if (strcmp(layer_names[i],c_layer_name)) {
+    if (strcmp(layer_names[i].c_str(),c_layer_name)) {
       vector<shared_ptr<Blob<float> > >& layer_blobs = layers[i]->blobs();
       if (layer_blobs.size() == 0) {
         continue;
