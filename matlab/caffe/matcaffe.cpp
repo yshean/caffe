@@ -549,6 +549,7 @@ static handler_registry handlers[] = {
   { "set_phase_test",     set_phase_test  },
   { "set_device",         set_device      },
   { "get_weights",        get_weights     },
+  { "get_layer_weights",  get_layer_weights},
   { "get_layers_info",    get_layers_info },
   { "get_blobs_info",     get_blobs_info  },
   { "get_init_key",       get_init_key    },
