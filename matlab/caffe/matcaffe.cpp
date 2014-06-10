@@ -287,7 +287,7 @@ static mxArray* do_get_layer_weights(const mxArray* const layer_name) {
   return mx_layer_weights;
 }
 
-static mxArray* do_set_layer_weights(const mxArray* const layer_name,
+static void do_set_layer_weights(const mxArray* const layer_name,
     const mxArray* const mx_layer_weights) {
   const vector<shared_ptr<Layer<float> > >& layers = net_->layers();
   const vector<string>& layer_names = net_->layer_names();
