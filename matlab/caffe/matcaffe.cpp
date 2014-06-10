@@ -257,8 +257,6 @@ static mxArray* do_get_layers_info() {
   {
     mxArray* mx_blob;
     const char* blobfnames[4] = {"num", "channels", "height", "width"};
-    string prev_layer_name = "";
-    int mx_layer_index = 0;
     for (unsigned int i = 0; i < layers.size(); ++i) {
       mxSetField(mx_layers, i, "name",
         mxCreateString(layer_names[i].c_str()));
@@ -275,9 +273,9 @@ static mxArray* do_get_layers_info() {
 
       for (unsigned int j = 0; j < layer_blobs.size(); ++j) {
         mxSetField(mx_blob, j, "num",
-          mxCreateDoubleScalar(layer_blobs[j]->num());
+          mxCreateDoubleScalar(layer_blobs[j]->num()));
         mxSetField(mx_blob, j, "channels",
-          mxCreateDoubleScalar(layer_blobs[j]->channels());
+          mxCreateDoubleScalar(layer_blobs[j]->channels()));
         mxSetField(mx_blob, j, "height",
           mxCreateDoubleScalar(layer_blobs[j]->height()));
         mxSetField(mx_blob, j, "width",
@@ -294,13 +292,13 @@ static mxArray* do_get_blobs_info() {
   const vector<shared_ptr<Blob<float> > >& blobs = net_->blobs();
   const vector<string>& blob_names = net_->blob_names();
 
-  int num_blobs = blobs.size();
+  const int num_blobs[2] = {blobs.size(), 1};
 
   // Step 1: prepare output array of structures
   mxArray* mx_blobs;
   {
     const char* fnames[5] = {"name", "num", "channels", "height", "width"};
-    mx_blobs = mxCreateStructArray(1, num_blobs, 5, fnames);
+    mx_blobs = mxCreateStructArray(2, num_blobs, 5, fnames);
   }
 
   // Step 2: copy info into output
