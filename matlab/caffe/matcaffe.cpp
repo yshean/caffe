@@ -84,7 +84,8 @@ static mxArray* do_forward(const mxArray* const bottom, mxArray* mx_loss) {
   }
 
   mx_loss = mxCreateNumericMatrix(1, 1, mxSINGLE_CLASS, mxREAL);
-  const vector<Blob<float>*>& output_blobs = net_->ForwardPrefilled(mxGetPr(mx_loss));
+  float* loss_ptr = reinterpret_cast<float*>(mxGetPr(mx_loss));
+  const vector<Blob<float>*>& output_blobs = net_->ForwardPrefilled(loss_ptr);
   LOG(INFO) << "loss: " << mxGetScalar(mx_loss);
   mxArray* mx_out = mxCreateCellMatrix(output_blobs.size(), 1);
   for (unsigned int i = 0; i < output_blobs.size(); ++i) {
