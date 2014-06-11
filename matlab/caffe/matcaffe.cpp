@@ -441,8 +441,8 @@ static void set_weights(MEX_ARGS) {
   CHECK(mxIsStruct(mx_weights)) << "Input needs to be struct";
   int num_layers = mxGetNumberOfElements(mx_weights);
   for (int i = 0; i < num_layers; ++i) {
-    const mxArray* layer_name= mxGetField(mx_layers,i,'name');
-    const mxArray* weights= mxGetField(mx_layers,i,'weights');
+    const mxArray* layer_name= mxGetField(mx_weights,i,"name");
+    const mxArray* weights= mxGetField(mx_weights,i,"weights");
     do_set_layer_weights(layer_name,weights);
   }
 }
@@ -644,6 +644,7 @@ static handler_registry handlers[] = {
   { "set_phase_test",     set_phase_test  },
   { "set_device",         set_device      },
   { "get_weights",        get_weights     },
+  { "set_weights",        set_weights     },
   { "get_layer_weights",  get_layer_weights},
   { "set_layer_weights",  set_layer_weights},
   { "get_layers_info",    get_layers_info },
