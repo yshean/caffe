@@ -802,14 +802,18 @@ static void reset(MEX_ARGS) {
 }
 
 static void forward(MEX_ARGS) {
-  if (nrhs != 1) {
-    LOG(ERROR) << "Only given " << nrhs << " arguments";
-    mexErrMsgTxt("Wrong number of arguments");
+  if (nrhs > 1) {
+    LOG(ERROR) << "Given " << nrhs << " arguments";
+    mexErrMsgTxt("Too may arguments");
   }
 
   plhs[1] = mxCreateNumericMatrix(1, 1, mxSINGLE_CLASS, mxREAL);  
-  plhs[0] = do_forward(prhs[0],plhs[1]);
-
+  if (nrhs == 0) {
+    //Forward without arguments behaves as forward_prefilled
+    plhs[0] = do_forward_prefilled(plhs[1]);
+  } else {
+    plhs[0] = do_forward(prhs[0],plhs[1]);
+  }
 }
 
 static void forward_prefilled(MEX_ARGS) {
