@@ -313,6 +313,7 @@ static void do_set_layer_weights(const mxArray* const layer_name,
         mwSize dims[4] = {layer_blobs[j]->width(), layer_blobs[j]->height(),
             layer_blobs[j]->channels(), layer_blobs[j]->num()};
         LOG(INFO) << dims[0] << " " << dims[1] << " " << dims[2] << " " << dims[3];
+        CHECK_EQ(layer_blobs[j]->count(),mxGetNumberOfElements(elem));
         const mwSize* dims_elem = mxGetDimensions(elem);
         LOG(INFO) << dims_elem[0] << " " << dims_elem[1];
         const float* const data_ptr =
