@@ -310,8 +310,11 @@ static void do_set_layer_weights(const mxArray* const layer_name,
         // internally data is stored as (width, height, channels, num)
         // where width is the fastest dimension
         const mxArray* const elem = mxGetCell(mx_layer_weights, j);
-        const mwSize* dims = mxGetDimensions(elem);
+        mwSize dims[4] = {layer_blobs[j]->width(), layer_blobs[j]->height(),
+            layer_blobs[j]->channels(), layer_blobs[j]->num()};
         LOG(INFO) << dims[0] << " " << dims[1] << " " << dims[2] << " " << dims[3];
+        const mwSize* dims_elem = mxGetDimensions(elem);
+        LOG(INFO) << dims_elem[0] << " " << dims_elem[1];
         const float* const data_ptr =
             reinterpret_cast<const float* const>(mxGetPr(elem));
         LOG(INFO) << "elem: " << data_ptr[0] << " " << data_ptr[1];
