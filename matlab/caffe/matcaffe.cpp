@@ -450,12 +450,9 @@ static mxArray* do_get_blobs_data(const mxArray* const blob_name) {
       default:
         LOG(FATAL) << "Unknown caffe mode: " << Caffe::mode();
       }
-
-      shared_ptr<Blob<float> > blob_data = blobs[i]->cpu_data();
-      if (layer_blobs.size() == 0) {
-        continue;
-      }
-
+    }
+  }
+  
   return mx_blob_data;
 }
 
