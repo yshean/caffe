@@ -427,13 +427,14 @@ static mxArray* do_get_blobs_data(const mxArray* const blob_name) {
   char* c_blob_name = mxArrayToString(blob_name);
   DLOG(INFO) << "Looking for: " << c_blob_name;
 
+  mxArray* mx_blob_data = NULL;
   for (unsigned int i = 0; i < blobs.size(); ++i) {
     DLOG(INFO) << blob_names[i];
     if (strcmp(blob_names[i].c_str(),c_blob_name) == 0) {
       mwSize dims[4] = {blobs[i]->width(), blobs[i]->height(),
           blobs[i]->channels(), blobs[i]->num()};
       DLOG(INFO) << dims[0] << " " << dims[1] << " " << dims[2] << " " << dims[3];
-      mxArray* mx_blob_data =
+      mx_blob_data =
         mxCreateNumericArray(4, dims, mxSINGLE_CLASS, mxREAL);
 
       float* blob_data_ptr = reinterpret_cast<float*>(mxGetPr(mx_blob_data));
@@ -452,7 +453,7 @@ static mxArray* do_get_blobs_data(const mxArray* const blob_name) {
       }
     }
   }
-  
+
   return mx_blob_data;
 }
 
