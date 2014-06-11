@@ -61,7 +61,7 @@ static int init_key = -2;
 // The actual forward function. It takes in a cell array of 4-D arrays as
 // input and outputs a cell array.
 
-static mxArray* do_forward(const mxArray* const bottom) {
+static mxArray* do_forward(const mxArray* const bottom, mxArray* mx_loss) {
   vector<Blob<float>*>& input_blobs = net_->input_blobs();
   CHECK_EQ(static_cast<unsigned int>(mxGetDimensions(bottom)[0]),
       input_blobs.size());
@@ -82,7 +82,10 @@ static mxArray* do_forward(const mxArray* const bottom) {
       LOG(FATAL) << "Unknown Caffe mode.";
     }  // switch (Caffe::mode())
   }
-  const vector<Blob<float>*>& output_blobs = net_->ForwardPrefilled();
+  float loss=0;
+  const vector<Blob<float>*>& output_blobs = net_->ForwardPrefilled(&loss);
+  LOG(INFO) << "loss: " << loss;
+  mx_loss = mxCreateDoubleScalar(loss);
   mxArray* mx_out = mxCreateCellMatrix(output_blobs.size(), 1);
   for (unsigned int i = 0; i < output_blobs.size(); ++i) {
     // internally data is stored as (width, height, channels, num)
@@ -117,6 +120,7 @@ static mxArray* do_backward(const mxArray* const top_diff) {
   // First, copy the output diff
   for (unsigned int i = 0; i < output_blobs.size(); ++i) {
     const mxArray* const elem = mxGetCell(top_diff, i);
+    CHECK_EQ(output_blobs[i]->count(),mxGetNumberOfElements(elem));
     const float* const data_ptr =
         reinterpret_cast<const float* const>(mxGetPr(elem));
     switch (Caffe::mode()) {
@@ -772,7 +776,7 @@ static void forward(MEX_ARGS) {
     mexErrMsgTxt("Wrong number of arguments");
   }
 
-  plhs[0] = do_forward(prhs[0]);
+  plhs[0] = do_forward(prhs[0],plhs[1]);
 }
 
 static void backward(MEX_ARGS) {
