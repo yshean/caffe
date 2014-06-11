@@ -543,7 +543,7 @@ static mxArray* do_get_all_diff() {
   mxArray* mx_all_diff;
   {
     const int num_blobs[1] = {blobs.size()};
-    const char* fnames[2] = {"name", "data"};
+    const char* fnames[2] = {"name", "diff"};
     mx_all_diff = mxCreateStructArray(1, num_blobs, 2, fnames);
   }
 
@@ -643,7 +643,7 @@ static void get_all_data(MEX_ARGS) {
   plhs[0] = do_get_all_data();
 }
 
-static void get_blob_diff(MEX_ARGS) {
+static void get_all_diff(MEX_ARGS) {
   if (nrhs != 0) {
     LOG(ERROR) << "Only given " << nrhs << " arguments";
     mexErrMsgTxt("Wrong number of arguments");
