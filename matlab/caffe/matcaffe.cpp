@@ -186,7 +186,7 @@ static mxArray* do_get_weights() {
   mxArray* mx_layers;
   {
     const mwSize dims[2] = {num_layers, 1};
-    const char* fnames[2] = {"weights", "layer_names"};
+    const char* fnames[2] = {"weights", "layer_name"};
     mx_layers = mxCreateStructArray(2, dims, 2, fnames);
   }
 
@@ -206,7 +206,7 @@ static mxArray* do_get_weights() {
         const mwSize dims[2] = {layer_blobs.size(), 1};
         mx_layer_cells = mxCreateCellArray(2, dims);
         mxSetField(mx_layers, mx_layer_index, "weights", mx_layer_cells);
-        mxSetField(mx_layers, mx_layer_index, "name",
+        mxSetField(mx_layers, mx_layer_index, "layer_name",
             mxCreateString(layer_names[i].c_str()));
         mx_layer_index++;
       }
@@ -441,7 +441,7 @@ static void set_weights(MEX_ARGS) {
   CHECK(mxIsStruct(mx_weights)) << "Input needs to be struct";
   int num_layers = mxGetNumberOfElements(mx_weights);
   for (int i = 0; i < num_layers; ++i) {
-    const mxArray* layer_name= mxGetField(mx_weights,i,"name");
+    const mxArray* layer_name= mxGetField(mx_weights,i,"layer_name");
     const mxArray* weights= mxGetField(mx_weights,i,"weights");
     do_set_layer_weights(layer_name,weights);
   }
