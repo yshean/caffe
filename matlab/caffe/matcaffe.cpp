@@ -206,7 +206,7 @@ static mxArray* do_get_weights() {
         const mwSize dims[2] = {layer_blobs.size(), 1};
         mx_layer_cells = mxCreateCellArray(2, dims);
         mxSetField(mx_layers, mx_layer_index, "weights", mx_layer_cells);
-        mxSetField(mx_layers, mx_layer_index, "layer_names",
+        mxSetField(mx_layers, mx_layer_index, "name",
             mxCreateString(layer_names[i].c_str()));
         mx_layer_index++;
       }
@@ -430,6 +430,21 @@ static void get_layer_weights(MEX_ARGS) {
     mexErrMsgTxt("Wrong number of arguments");
   }
   plhs[0] = do_get_layer_weights(prhs[0]);
+}
+
+static void set_weights(MEX_ARGS) {
+  if (nrhs != 1) {
+    LOG(ERROR) << "Given " << nrhs << " arguments expecting 1";
+    mexErrMsgTxt("Wrong number of arguments");
+  }
+  const mxArray* const mx_weights = prhs[0];
+  CHECK(mxIsStruct(mx_weights)) << "Input needs to be struct";
+  int num_layers = mxGetNumberOfElements(mx_weights);
+  for (int i = 0; i < num_layers; ++i) {
+    const mxArray* layer_name= mxGetField(mx_layers,i,'name');
+    const mxArray* weights= mxGetField(mx_layers,i,'weights');
+    do_set_layer_weights(layer_name,weights);
+  }
 }
 
 static void set_layer_weights(MEX_ARGS) {
