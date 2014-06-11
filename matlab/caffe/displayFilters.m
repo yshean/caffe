@@ -1,9 +1,7 @@
 function displayFilters(X, display_cols)
-%DISPLAYDATA Display 2D data in a nice grid
-%   [h, display_array] = DISPLAYDATA(X, example_width) displays 2D data
-%   stored in X in a nice grid. It returns the figure handle h and the 
-%   displayed array if requested.
-
+%displayFilters Display [height * width * num_channels * num_filters] filters 
+%  in a nice grid using display_cols, at most it displays 32 filters
+%   [h, display_array] = displayFilters(X, display_cols)
 
 % Gray Image
 colormap(gray);
