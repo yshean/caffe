@@ -549,6 +549,23 @@ static void load_net(MEX_ARGS) {
   }
 }
 
+static void save_net(MEX_ARGS) {
+  if (nrhs != 1) {
+    LOG(ERROR) << "Only given " << nrhs << " arguments";
+    mexErrMsgTxt("Wrong number of arguments");
+  }
+  if (net_) {
+  char* model_file = mxArrayToString(prhs[0]);
+  NetParameter net_param;
+  net_->ToProto(&net_param, false);
+  WriteProtoToBinaryFile(net_param, model_file);
+  CheckFile(string(model_file));
+  mxFree(model_file);
+  } else {
+    mexErrMsgTxt("Need to have a network to save");
+  }
+}
+
 static void reset(MEX_ARGS) {
   if (net_) {
     net_.reset();
@@ -583,6 +600,7 @@ static void is_initialized(MEX_ARGS) {
   }
 }
 
+
 /** -----------------------------------------------------------------
  ** Available commands.
  **/
@@ -598,6 +616,7 @@ static handler_registry handlers[] = {
   { "init",               init            },
   { "init_net",           init_net        },
   { "load_net",           load_net        },
+  { "save_net",           save_net        },
   { "is_initialized",     is_initialized  },
   { "set_mode_cpu",       set_mode_cpu    },
   { "set_mode_gpu",       set_mode_gpu    },
