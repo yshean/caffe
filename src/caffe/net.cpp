@@ -252,7 +252,6 @@ const vector<Blob<Dtype>*>& Net<Dtype>::ForwardPrefilled(Dtype* loss) {
       *loss += layer_loss;
     }
   }
-  LOG(INFO) << "loss in caffe: " << *loss;
   return net_output_blobs_;
 }
 
