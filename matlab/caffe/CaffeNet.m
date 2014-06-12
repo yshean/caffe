@@ -34,7 +34,7 @@ classdef CaffeNet
       end
       obj = self;
     end
-  
+  end
   methods
     function res = forward(self,input)
       if nargin < 2
