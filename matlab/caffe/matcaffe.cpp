@@ -15,6 +15,30 @@
 
 #define MEX_ARGS int nlhs, mxArray **plhs, int nrhs, const mxArray **prhs
 
+// The interim macro that simply strips the excess and ends up with the required macro
+#define CHECK_EQ_X(A,B,C,FUNC, ...) FUNC
+
+// The macro that the programmer uses
+#define CHECK_EQ(...)  CHECK_EQ_X(__VA_ARGS__,  \
+                       CHECK_EQ_3(__VA_ARGS__),    \
+                       CHECK_EQ_2(__VA_ARGS__))
+
+#define CHECK_EQ_2(a, b)  do {                                  \
+  if ( (a) != (b) ) {                                           \
+    fprintf(stderr, "%s:%d: Check failed because %s != %s\n",   \
+            __FILE__, __LINE__, #a, #b);                        \
+    mexErrMsgTxt("Error in CHECK_EQ");                          \
+  }                                                             \
+} while (0);
+
+#define CHECK_EQ_3(a, b, m)  do {                               \
+  if ( (a) != (b) ) {                                           \
+    fprintf(stderr, "%s:%d: Check failed because %s != %s\n",   \
+            __FILE__, __LINE__, #a, #b);                        \
+    mexErrMsgTxt(#m);                                           \
+  }                                                             \
+} while (0);
+
 using namespace caffe;  // NOLINT(build/namespaces)
 
 
@@ -205,8 +229,8 @@ static void do_set_output_blobs(const mxArray* const top_diff) {
   // Copy top_diff to the output diff
   for (unsigned int i = 0; i < output_blobs.size(); ++i) {
     const mxArray* const elem = mxGetCell(top_diff, i);
-    CHECK_EQ(output_blobs[i]->count(),mxGetNumberOfElements(elem)) <<
-      "output_blobs[i]->count() don't match with numel(top_diff{i})";
+    CHECK_EQ(output_blobs[i]->count(),mxGetNumberOfElements(elem),
+      "output_blobs[i]->count() don't match with numel(top_diff{i})");
     const float* const data_ptr =
         reinterpret_cast<const float* const>(mxGetPr(elem));
     switch (Caffe::mode()) {
@@ -421,7 +445,7 @@ static void do_set_layer_weights(const mxArray* const layer_name,
       }
       DLOG(INFO) << "Found layer " << layer_names[i];
       CHECK_EQ(static_cast<unsigned int>(mxGetDimensions(mx_layer_weights)[0]),
-        layer_blobs.size()) << "Num of cells don't match layer_blobs.size";
+        layer_blobs.size(), "Num of cells don't match layer_blobs.size");
       DLOG(INFO) << "layer_blobs.size() = " << layer_blobs.size();
       for (unsigned int j = 0; j < layer_blobs.size(); ++j) {
         // internally data is stored as (width, height, channels, num)
@@ -430,8 +454,8 @@ static void do_set_layer_weights(const mxArray* const layer_name,
         mwSize dims[4] = {layer_blobs[j]->width(), layer_blobs[j]->height(),
             layer_blobs[j]->channels(), layer_blobs[j]->num()};
         DLOG(INFO) << dims[0] << " " << dims[1] << " " << dims[2] << " " << dims[3];
-        CHECK_EQ(layer_blobs[j]->count(), mxGetNumberOfElements(elem)) <<
-          "Numel of weights don't match count of layer_blob";
+        CHECK_EQ(layer_blobs[j]->count(), mxGetNumberOfElements(elem),
+          "Numel of weights don't match count of layer_blob");
         const mwSize* dims_elem = mxGetDimensions(elem);
         DLOG(INFO) << dims_elem[0] << " " << dims_elem[1];
         const float* const data_ptr =
@@ -711,7 +735,9 @@ static void set_weights(MEX_ARGS) {
     mexErrMsgTxt("Wrong number of arguments");
   }
   const mxArray* const mx_weights = prhs[0];
-  CHECK(mxIsStruct(mx_weights)) << "Input needs to be struct";
+  if (!mxIsStruct(mx_weights)) {
+    mexErrMsgTxt("Input needs to be struct");
+  }
   int num_layers = mxGetNumberOfElements(mx_weights);
   for (int i = 0; i < num_layers; ++i) {
     const mxArray* layer_name= mxGetField(mx_weights,i,"layer_name");
@@ -1038,8 +1064,9 @@ static handler_registry handlers[] = {
 
 
 void FailureFunction() {
-     // Reports something...
-     mexErrMsgTxt("exception");
+  // Reports something...
+  mexErrMsgTxt("Failure");
+  return;
 }
 
 /** -----------------------------------------------------------------
