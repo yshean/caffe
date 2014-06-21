@@ -35,6 +35,8 @@
   if ( (a) != (b) ) {                                           \
     fprintf(stderr, "%s:%d: Check failed because %s != %s\n",   \
             __FILE__, __LINE__, #a, #b);                        \
+    fprintf(stderr, "%s:%d: %s\n",                              \
+            __FILE__, __LINE__, #m);                            \
     mexErrMsgTxt(#m);                                           \
   }                                                             \
 } while (0);
@@ -1070,17 +1072,10 @@ static handler_registry handlers[] = {
 };
 
 
-void FailureFunction() {
-  // Reports something...
-  mexErrMsgTxt("Failure");
-  return;
-}
-
 /** -----------------------------------------------------------------
  ** matlab entry point: caffe(api_command, arg1, arg2, ...)
  **/
 void mexFunction(MEX_ARGS) {
-  google::InstallFailureFunction(&FailureFunction);
   if (nrhs == 0) {
     LOG(ERROR) << "No API command given";
     mexErrMsgTxt("An API command is requires");
