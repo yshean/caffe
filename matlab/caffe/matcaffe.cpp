@@ -39,6 +39,13 @@
   }                                                             \
 } while (0);
 
+#define CUDA_CHECK(condition) \
+  /* Code block avoids redefinition of cudaError_t error */ \
+  do { \
+    cudaError_t error = condition; \
+    CHECK_EQ(error, cudaSuccess, "CUDA_CHECK")  \
+  } while (0)
+
 using namespace caffe;  // NOLINT(build/namespaces)
 
 
