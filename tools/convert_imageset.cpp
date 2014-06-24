@@ -20,6 +20,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <iostream>
 
 #include "caffe/proto/caffe.pb.h"
 #include "caffe/util/io.hpp"
@@ -80,6 +81,9 @@ int main(int argc, char** argv) {
   leveldb::WriteBatch* batch = new leveldb::WriteBatch();
   int data_size;
   bool data_size_initialized = false;
+
+  std::cout << "Found " << lines.size() << " files in list." << std::endl;
+
   for (int line_id = 0; line_id < lines.size(); ++line_id) {
     if (!ReadImageToDatum(root_folder + lines[line_id].first,
         lines[line_id].second, resize_height, resize_width, &datum)) {

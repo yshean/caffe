@@ -26,13 +26,20 @@
 #include "caffe/solver.hpp"
 
 using namespace caffe;  // NOLINT(build/namespaces)
-
+const int ARG_MIN = 5;
 int main(int argc, char** argv) {
+  
+  if (argc < ARG_MIN) 
+  {
+    LOG(ERROR) << "Usage: dump_network input_net_param trained_net_param input_blob output_prefix 0/1";
+    return 1;
+  }
   Caffe::set_mode(Caffe::GPU);
   Caffe::set_phase(Caffe::TEST);
 
   shared_ptr<Net<float> > caffe_net;
-  if (strcmp(argv[1], "none") == 0) {
+  if (strcmp(argv[1], "none") == 0) 
+  {
     // We directly load the net param from trained file
     caffe_net.reset(new Net<float>(argv[2]));
   } else {
@@ -50,9 +57,11 @@ int main(int argc, char** argv) {
   }
 
   string output_prefix(argv[4]);
+  string output_prefix_txt = output_prefix + "text";
   // Run the network without training.
   LOG(ERROR) << "Performing Forward";
   caffe_net->Forward(input_vec);
+  LOG(ERROR) << "OK! ";
   if (argc > 5 && strcmp(argv[5], "1") == 0) {
     LOG(ERROR) << "Performing Backward";
     Caffe::set_phase(Caffe::TRAIN);
@@ -74,6 +83,8 @@ int main(int argc, char** argv) {
     blobs[blobid]->ToProto(&output_blob_proto);
     WriteProtoToBinaryFile(output_blob_proto,
         output_prefix + blob_names[blobid]);
+    WriteProtoToTextFile(output_blob_proto,
+        output_prefix_txt + blob_names[blobid]);
   }
 
   return 0;
