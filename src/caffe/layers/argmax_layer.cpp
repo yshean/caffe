@@ -12,8 +12,7 @@ namespace caffe {
 template <typename Dtype>
 void ArgMaxLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
-  CHECK_EQ(bottom.size(), 1) << "ArgMaxLayer Layer takes 1 input.";
-  CHECK_EQ(top->size(), 1) << "ArgMaxLayer Layer takes 1 output.";
+  Layer<Dtype>::SetUp(bottom, top);
   out_max_val_ = this->layer_param_.argmax_param().out_max_val();
   if (out_max_val_) {
     // Produces max_ind and max_val
@@ -32,7 +31,6 @@ Dtype ArgMaxLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   int num = bottom[0]->num();
   int dim = bottom[0]->count() / bottom[0]->num();
   for (int i = 0; i < num; ++i) {
-    // Accuracy
     Dtype max_val = -FLT_MAX;
     int max_ind = 0;
     for (int j = 0; j < dim; ++j) {

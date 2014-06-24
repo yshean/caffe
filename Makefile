@@ -129,6 +129,7 @@ LIBRARY_DIRS += $(CUDA_LIB_DIR)
 LIBRARIES := cudart cublas curand \
 	pthread \
 	glog protobuf leveldb snappy \
+	lmdb \
 	boost_system \
 	hdf5_hl hdf5 \
 	opencv_core opencv_highgui opencv_imgproc
@@ -297,7 +298,7 @@ $(BUILD_DIR_LINK): $(BUILD_DIR)/.linked
 $(BUILD_DIR)/.linked:
 	@ mkdir -p $(BUILD_DIR)
 	@ $(RM) $(OTHER_BUILD_DIR)/.linked
-	@ $(RM) $(BUILD_DIR_LINK)
+	@ $(RM) -r $(BUILD_DIR_LINK)
 	@ ln -s $(BUILD_DIR) $(BUILD_DIR_LINK)
 	@ touch $@
 
