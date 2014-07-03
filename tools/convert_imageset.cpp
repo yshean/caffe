@@ -132,8 +132,6 @@ int main(int argc, char** argv) {
 
   std::cout << "Found " << lines.size() << " files in list." << std::endl;
 
-
-
   for (int line_id = 0; line_id < lines.size(); ++line_id) {
     if (!ReadImageToDatum(root_folder + lines[line_id].first,
         lines[line_id].second, resize_height, resize_width, is_color, &datum)) {
