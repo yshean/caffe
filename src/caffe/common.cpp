@@ -22,9 +22,8 @@ int64_t cluster_seedgen(void) {
 
 
 Caffe::Caffe()
-    : mode_(Caffe::CPU), phase_(Caffe::TRAIN), cublas_handle_(NULL),
-      curand_generator_(NULL),
-      random_generator_() {
+    : cublas_handle_(NULL), curand_generator_(NULL), random_generator_(),
+    mode_(Caffe::CPU), phase_(Caffe::TRAIN) {
   // Try to create a cublas handler, and report an error if failed (but we will
   // keep the program running as one might just want to run CPU code).
   if (cublasCreate(&cublas_handle_) != CUBLAS_STATUS_SUCCESS) {
@@ -50,6 +49,7 @@ void Caffe::set_random_seed(const unsigned int seed) {
   // Curand seed
   // Yangqing's note: simply setting the generator seed does not seem to
   // work on the tesla K20s, so I wrote the ugly reset thing below.
+  static bool g_curand_availability_logged = false;
   if (Get().curand_generator_) {
     CURAND_CHECK(curandDestroyGenerator(curand_generator()));
     CURAND_CHECK(curandCreateGenerator(&Get().curand_generator_,
@@ -57,7 +57,11 @@ void Caffe::set_random_seed(const unsigned int seed) {
     CURAND_CHECK(curandSetPseudoRandomGeneratorSeed(curand_generator(),
         seed));
   } else {
-    LOG(ERROR) << "Curand not available. Skipping setting the curand seed.";
+    if (!g_curand_availability_logged) {
+        LOG(ERROR) <<
+            "Curand not available. Skipping setting the curand seed.";
+        g_curand_availability_logged = true;
+    }
   }
   // RNG seed
   Get().random_generator_.reset(new RNG(seed));
@@ -157,8 +161,10 @@ const char* cublasGetErrorString(cublasStatus_t error) {
     return "CUBLAS_STATUS_EXECUTION_FAILED";
   case CUBLAS_STATUS_INTERNAL_ERROR:
     return "CUBLAS_STATUS_INTERNAL_ERROR";
+#if CUDA_VERSION >= 6000
   case CUBLAS_STATUS_NOT_SUPPORTED:
     return "CUBLAS_STATUS_NOT_SUPPORTED";
+#endif
   }
   return "Unknown cublas status";
 }
