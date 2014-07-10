@@ -84,3 +84,45 @@ class Classifier(caffe.Net):
             predictions = predictions.mean(1)
 
         return predictions
+      
+    def predict_loc(self, inputs, oversample=True):
+        """
+        Predict classification probabilities of inputs.
+
+        Take
+        inputs: iterable of (H x W x K) input ndarrays.
+        oversample: average predictions across center, corners, and mirrors
+                    when True (default). Center-only prediction when False.
+
+        Give
+        predictions: (N x C) ndarray of class probabilities
+                     for N images and C classes.
+        """
+        # Scale to standardize input dimensions.
+        inputs = np.asarray([caffe.io.resize_image(im, self.image_dims)
+                             for im in inputs])
+
+        if oversample:
+            # Generate center, corner, and mirrored crops.
+            inputs = caffe.io.oversample(inputs, self.crop_dims)
+        else:
+            # Take center crop.
+            center = np.array(self.image_dims) / 2.0
+            crop = np.tile(center, (1, 2))[0] + np.concatenate([
+                -self.crop_dims / 2.0,
+                self.crop_dims / 2.0
+            ])
+            inputs = inputs[:, crop[0]:crop[2], crop[1]:crop[3], :]
+
+        # Classify
+        caffe_in = np.asarray([self.preprocess(self.inputs[0], in_)
+                    for in_ in inputs])
+        out = self.forward_all(**{self.inputs[0]: caffe_in})
+        predictions = out[self.outputs[0]].squeeze(axis=(2,3))
+	print predictions
+        # For oversampling, average predictions across crops.
+        if oversample:
+            predictions = predictions.reshape((len(predictions) / 10, 10, -1))
+            predictions = predictions.mean(1)
+
+        return predictions
