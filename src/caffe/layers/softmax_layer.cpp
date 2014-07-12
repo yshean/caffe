@@ -34,7 +34,7 @@ Dtype SoftmaxLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   Dtype* scale_data = scale_.mutable_cpu_data();
   int num = bottom[0]->num();
   int dim = bottom[0]->count() / bottom[0]->num();
-  memcpy(top_data, bottom_data, sizeof(Dtype) * bottom[0]->count());
+  caffe_copy(bottom[0]->count(), bottom_data, top_data);
   // we need to subtract the max to avoid numerical issues, compute the exp,
   // and then normalize.
   for (int i = 0; i < num; ++i) {
@@ -60,7 +60,7 @@ Dtype SoftmaxLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 
 template <typename Dtype>
 void SoftmaxLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
-    const bool propagate_down,
+    const vector<bool>& propagate_down,
     vector<Blob<Dtype>*>* bottom) {
   const Dtype* top_diff = top[0]->cpu_diff();
   const Dtype* top_data = top[0]->cpu_data();
@@ -68,7 +68,7 @@ void SoftmaxLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
   Dtype* scale_data = scale_.mutable_cpu_data();
   int num = top[0]->num();
   int dim = top[0]->count() / top[0]->num();
-  memcpy(bottom_diff, top_diff, sizeof(Dtype) * top[0]->count());
+  caffe_copy(top[0]->count(), top_diff, bottom_diff);
   // Compute inner1d(top_diff, top_data) and subtract them from the bottom diff
   for (int i = 0; i < num; ++i) {
     scale_data[i] = caffe_cpu_dot<Dtype>(dim, top_diff + i * dim,

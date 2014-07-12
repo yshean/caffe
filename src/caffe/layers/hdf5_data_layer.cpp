@@ -45,6 +45,7 @@ void HDF5DataLayer<Dtype>::LoadHDF5FileData(const char* filename) {
     file_id, "label", MIN_LABEL_DIM, MAX_LABEL_DIM, &label_blob_);
 
   herr_t status = H5Fclose(file_id);
+  CHECK_GE(status, 0) << "Failed to close HDF5 file " << filename;
   CHECK_EQ(data_blob_.num(), label_blob_.num());
   LOG(INFO) << "Successully loaded " << data_blob_.num() << " rows";
 }
@@ -112,11 +113,6 @@ Dtype HDF5DataLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   }
   return Dtype(0.);
 }
-
-// The backward operations are dummy - they do not carry any computation.
-template <typename Dtype>
-void HDF5DataLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const bool propagate_down, vector<Blob<Dtype>*>* bottom) { }
 
 INSTANTIATE_CLASS(HDF5DataLayer);
 

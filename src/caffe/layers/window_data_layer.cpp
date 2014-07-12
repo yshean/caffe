@@ -59,7 +59,7 @@ void* WindowDataLayerPrefetch(void* layer_pointer) {
   bool use_square = (crop_mode == "square") ? true : false;
 
   // zero out batch
-  memset(top_data, 0, sizeof(Dtype)*layer->prefetch_data_->count());
+  caffe_set(layer->prefetch_data_->count(), Dtype(0), top_data);
 
   const int num_fg = static_cast<int>(static_cast<float>(batch_size)
       * fg_fraction);
@@ -291,7 +291,10 @@ void WindowDataLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
 
   string hashtag;
   int image_index, channels;
-  while (infile >> hashtag >> image_index) {
+  if (!(infile >> hashtag >> image_index)) {
+    LOG(FATAL) << "Window file is empty";
+  }
+  do {
     CHECK_EQ(hashtag, "#");
     // read image path
     string image_path;
@@ -347,7 +350,7 @@ void WindowDataLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
           << image_size[2] << " "
           << "windows to process: " << num_windows;
     }
-  }
+  } while (infile >> hashtag >> image_index);
 
   LOG(INFO) << "Number of images: " << image_index+1;
 
