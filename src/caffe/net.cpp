@@ -15,10 +15,6 @@
 #include "caffe/util/math_functions.hpp"
 #include "caffe/util/upgrade_proto.hpp"
 
-using std::make_pair;
-using std::map;
-using std::pair;
-using std::set;
 
 namespace caffe {
 
@@ -88,7 +84,7 @@ void Net<Dtype>::Init(const NetParameter& in_param) {
           << top_vecs_[layer_id][top_id]->count() << ")";
     }
     DLOG(INFO) << "Memory required for data: " << memory_used_ * sizeof(Dtype);
-    const int blobs_lr_size = layers_[layer_id]->layer_param().blobs_lr_size();
+    const int blobs_lr_size = layer_param.blobs_lr_size();
     const int num_param_blobs = layers_[layer_id]->blobs().size();
     CHECK(blobs_lr_size == num_param_blobs || blobs_lr_size == 0)
         << "Incorrect blobs lr size: should be either 0 "
@@ -96,13 +92,18 @@ void Net<Dtype>::Init(const NetParameter& in_param) {
     if (blobs_lr_size) {
       // Check if this layer needs backward operation itself
       for (int param_id = 0; param_id < blobs_lr_size; ++param_id) {
-        need_backward |=
-            (layers_[layer_id]->layer_param().blobs_lr(param_id) > 0);
+        const bool param_need_backward = layer_param.blobs_lr(param_id) > 0;
+        need_backward |= param_need_backward;
+        layers_[layer_id]->set_param_propagate_down(param_id,
+                                                    param_need_backward);
       }
     } else if (layers_[layer_id]->blobs().size()) {
       // catch: if a layer param does not specify blobs_lr, we should assume the
       // learning rate to be 1. Thus we will need to perform backward.
       need_backward = true;
+      for (int param_id = 0; param_id < blobs_lr_size; ++param_id) {
+        layers_[layer_id]->set_param_propagate_down(param_id, true);
+      }
     }
     const int param_size = layer_param.param_size();
     CHECK(param_size == num_param_blobs || param_size == 0)
@@ -139,6 +140,10 @@ void Net<Dtype>::Init(const NetParameter& in_param) {
         blob_need_backward_[bottom_id_vecs_[layer_id][bottom_id]] =
             blob_need_backward_[bottom_id_vecs_[layer_id][bottom_id]] ||
             bottom_need_backward_[layer_id][bottom_id];
+      }
+      for (int param_id = 0; param_id < layers_[layer_id]->blobs().size();
+           ++param_id) {
+        layers_[layer_id]->set_param_propagate_down(param_id, true);
       }
     }
   }
@@ -326,16 +331,34 @@ void Net<Dtype>::GetLearningRateAndWeightDecay() {
 }
 
 template <typename Dtype>
-const vector<Blob<Dtype>*>& Net<Dtype>::ForwardPrefilled(Dtype* loss) {
-  if (loss != NULL) {
-    *loss = Dtype(0.);
-  }
-  for (int i = 0; i < layers_.size(); ++i) {
+Dtype Net<Dtype>::ForwardFromTo(int start, int end) {
+  CHECK_GE(start, 0);
+  CHECK_LT(end, layers_.size());
+  Dtype loss = 0;
+  for (int i = start; i <= end; ++i) {
     // LOG(ERROR) << "Forwarding " << layer_names_[i];
     Dtype layer_loss = layers_[i]->Forward(bottom_vecs_[i], &top_vecs_[i]);
-    if (loss != NULL) {
-      *loss += layer_loss;
-    }
+    loss += layer_loss;
+  }
+  return loss;
+}
+
+template <typename Dtype>
+Dtype Net<Dtype>::ForwardFrom(int start) {
+  return ForwardFromTo(start, layers_.size() - 1);
+}
+
+template <typename Dtype>
+Dtype Net<Dtype>::ForwardTo(int end) {
+  return ForwardFromTo(0, end);
+}
+
+template <typename Dtype>
+const vector<Blob<Dtype>*>& Net<Dtype>::ForwardPrefilled(Dtype* loss) {
+  if (loss != NULL) {
+    *loss = ForwardFromTo(0, layers_.size() - 1);
+  } else {
+    ForwardFromTo(0, layers_.size() - 1);
   }
   return net_output_blobs_;
 }
@@ -371,10 +394,11 @@ string Net<Dtype>::Forward(const string& input_blob_protos, Dtype* loss) {
   return output;
 }
 
-
 template <typename Dtype>
-void Net<Dtype>::Backward() {
-  for (int i = layers_.size() - 1; i >= 0; --i) {
+void Net<Dtype>::BackwardFromTo(int start, int end) {
+  CHECK_GE(end, 0);
+  CHECK_LT(start, layers_.size());
+  for (int i = start; i >= end; --i) {
     if (layer_need_backward_[i]) {
       layers_[i]->Backward(
           top_vecs_[i], bottom_need_backward_[i], &bottom_vecs_[i]);
@@ -411,6 +435,21 @@ void Net<Dtype>::ShareTrainedLayersWith(Net* other) {
       target_blobs[j]->ShareData(*source_blob);
     }
   }
+}
+
+template <typename Dtype>
+void Net<Dtype>::BackwardFrom(int start) {
+  BackwardFromTo(start, 0);
+}
+
+template <typename Dtype>
+void Net<Dtype>::BackwardTo(int end) {
+  BackwardFromTo(layers_.size() - 1, end);
+}
+
+template <typename Dtype>
+void Net<Dtype>::Backward() {
+  BackwardFromTo(layers_.size() - 1, 0);
 }
 
 template <typename Dtype>
@@ -489,11 +528,13 @@ void Net<Dtype>::Update() {
       owner_diff = params_[param_owners_[i]]->mutable_cpu_diff();
       caffe_add(count, this_diff, owner_diff, owner_diff);
       break;
+#ifndef CPU_ONLY
     case Caffe::GPU:
       this_diff = params_[i]->gpu_diff();
       owner_diff = params_[param_owners_[i]]->mutable_gpu_diff();
       caffe_gpu_add(count, this_diff, owner_diff, owner_diff);
       break;
+#endif
     default:
       LOG(FATAL) << "Unknown caffe mode: " << Caffe::mode();
     }
