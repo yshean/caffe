@@ -14,10 +14,12 @@
 
 #include "caffe/test/test_caffe_main.hpp"
 
+using std::ostringstream;
+
 namespace caffe {
 
 template <typename TypeParam>
-class NetTest : public ::testing::Test {
+class NetTest : public MultiDeviceTest<TypeParam> {
   typedef typename TypeParam::Dtype Dtype;
 
  protected:
@@ -216,8 +218,11 @@ class NetTest : public ::testing::Test {
     InitNetFromProtoString(proto);
   }
 
-  virtual void InitUnsharedWeightsNet() {
-    const string& proto =
+  virtual void InitUnsharedWeightsNet(const bool bias_term = false,
+      const Dtype blobs_lr_w1 = 1, const Dtype blobs_lr_b1 = 2,
+      const Dtype blobs_lr_w2 = 1, const Dtype blobs_lr_b2 = 2) {
+    ostringstream proto;
+    proto <<
         "name: 'UnsharedWeightsNetwork' "
         "layers: { "
         "  name: 'data' "
@@ -236,16 +241,25 @@ class NetTest : public ::testing::Test {
         "} "
         "layers: { "
         "  name: 'innerproduct1' "
-        "  type: INNER_PRODUCT "
+       "  type: INNER_PRODUCT "
         "  inner_product_param { "
         "    num_output: 10 "
-        "    bias_term: false "
+        "    bias_term: " << bias_term <<
         "    weight_filler { "
         "      type: 'gaussian' "
         "      std: 10 "
         "    } "
         "  } "
-        "  param: 'unsharedweights1' "
+        "  param: 'unsharedweights1' ";
+    if (bias_term) {
+      proto << "  param: '' ";
+    }
+    proto <<
+        "  blobs_lr: " << blobs_lr_w1;
+    if (bias_term) {
+      proto << "  blobs_lr: " << blobs_lr_b1;
+    }
+    proto <<
         "  bottom: 'data' "
         "  top: 'innerproduct1' "
         "} "
@@ -254,14 +268,23 @@ class NetTest : public ::testing::Test {
         "  type: INNER_PRODUCT "
         "  inner_product_param { "
         "    num_output: 10 "
-        "    bias_term: false "
+        "    bias_term: " << bias_term <<
         "    weight_filler { "
         "      type: 'gaussian' "
         "      std: 10 "
         "    } "
         "  } "
-        "  param: 'unsharedweights2' "
+        "  param: 'unsharedweights2' ";
+    if (bias_term) {
+      proto << "  param: '' ";
+    }
+    proto <<
         "  bottom: 'data' "
+        "  blobs_lr: " << blobs_lr_w2;
+    if (bias_term) {
+      proto << "  blobs_lr: " << blobs_lr_b2;
+    }
+    proto <<
         "  top: 'innerproduct2' "
         "} "
         "layers: { "
@@ -270,7 +293,7 @@ class NetTest : public ::testing::Test {
         "  bottom: 'innerproduct1' "
         "  bottom: 'innerproduct2' "
         "} ";
-    InitNetFromProtoString(proto);
+    InitNetFromProtoString(proto.str());
   }
 
   virtual void InitSharedWeightsNet() {
@@ -695,6 +718,120 @@ TYPED_TEST(NetTest, TestSharedWeightsUpdate) {
     EXPECT_EQ(expected_updated_params2[i], actual_updated_params2[i]);
     EXPECT_NE(actual_updated_params1[i], actual_updated_params2[i]);
     EXPECT_NE(expected_updated_params, expected_updated_params1);
+  }
+}
+
+TYPED_TEST(NetTest, TestParamPropagateDown) {
+  typedef typename TypeParam::Dtype Dtype;
+  vector<Blob<Dtype>*> bottom;
+  const bool kBiasTerm = true;
+
+  // Run the net with all params learned; check that gradients are non-zero.
+  Caffe::set_random_seed(this->seed_);
+  Dtype blobs_lr_w1 = 1, blobs_lr_w2 = 1, blobs_lr_b1 = 2, blobs_lr_b2 = 2;
+  this->InitUnsharedWeightsNet(kBiasTerm, blobs_lr_w1, blobs_lr_w2,
+                               blobs_lr_b1, blobs_lr_b2);
+  this->net_->Forward(bottom);
+  this->net_->Backward();
+  const vector<shared_ptr<Blob<Dtype> > >& params = this->net_->params();
+  const int num_params = params.size();
+  ASSERT_EQ(4, num_params);
+  const Dtype kNonZeroTestMin = 1e-3;
+  vector<Dtype> param_asums(params.size());
+  for (int i = 0; i < num_params; ++i) {
+    const Dtype param_asum =
+       caffe_cpu_asum(params[i]->count(), params[i]->cpu_diff());
+    param_asums[i] = param_asum;
+    EXPECT_GT(param_asum, kNonZeroTestMin);
+  }
+
+  // Change the learning rates to different non-zero values; should see same
+  // gradients.
+  Caffe::set_random_seed(this->seed_);
+  blobs_lr_w1 *= 2, blobs_lr_w2 *= 2, blobs_lr_b1 *= 2, blobs_lr_b2 *= 2;
+  this->InitUnsharedWeightsNet(kBiasTerm, blobs_lr_w1, blobs_lr_w2,
+                               blobs_lr_b1, blobs_lr_b2);
+  this->net_->Forward(bottom);
+  this->net_->Backward();
+  const vector<shared_ptr<Blob<Dtype> > >& params2 = this->net_->params();
+  ASSERT_EQ(num_params, params2.size());
+  for (int i = 0; i < num_params; ++i) {
+    const Dtype param_asum =
+       caffe_cpu_asum(params2[i]->count(), params2[i]->cpu_diff());
+    EXPECT_EQ(param_asum, param_asums[i]);
+  }
+
+  // Change a subset of the learning rates to zero; check that we see zero
+  // gradients for those.
+  Caffe::set_random_seed(this->seed_);
+  blobs_lr_w1 = 1, blobs_lr_w2 = 0, blobs_lr_b1 = 0, blobs_lr_b2 = 1;
+  this->InitUnsharedWeightsNet(kBiasTerm, blobs_lr_w1, blobs_lr_w2,
+                               blobs_lr_b1, blobs_lr_b2);
+  this->net_->Forward(bottom);
+  this->net_->Backward();
+  const vector<shared_ptr<Blob<Dtype> > >& params3 = this->net_->params();
+  ASSERT_EQ(num_params, params3.size());
+  for (int i = 0; i < num_params; ++i) {
+    const Dtype param_asum =
+       caffe_cpu_asum(params3[i]->count(), params3[i]->cpu_diff());
+    if (i == 1 || i == 2) {
+      EXPECT_EQ(0, param_asum);
+    } else {
+      EXPECT_EQ(param_asum, param_asums[i]);
+    }
+  }
+
+  // Change the opposite subset of the learning rates to zero.
+  Caffe::set_random_seed(this->seed_);
+  blobs_lr_w1 = 0, blobs_lr_w2 = 1, blobs_lr_b1 = 1, blobs_lr_b2 = 0;
+  this->InitUnsharedWeightsNet(kBiasTerm, blobs_lr_w1, blobs_lr_w2,
+                               blobs_lr_b1, blobs_lr_b2);
+  this->net_->Forward(bottom);
+  this->net_->Backward();
+  const vector<shared_ptr<Blob<Dtype> > >& params4 = this->net_->params();
+  ASSERT_EQ(num_params, params4.size());
+  for (int i = 0; i < num_params; ++i) {
+    const Dtype param_asum =
+       caffe_cpu_asum(params4[i]->count(), params4[i]->cpu_diff());
+    if (i == 0 || i == 3) {
+      EXPECT_EQ(0, param_asum);
+    } else {
+      EXPECT_EQ(param_asum, param_asums[i]);
+    }
+  }
+}
+
+TYPED_TEST(NetTest, TestFromTo) {
+  typedef typename TypeParam::Dtype Dtype;
+  this->InitTinyNet();
+
+  // Run Forward and Backward, recording the data diff and loss.
+  Blob<Dtype> data;
+  data.ReshapeLike(*this->net_->blob_by_name("data"));
+  this->net_->ForwardPrefilled();
+  this->net_->Backward();
+  data.CopyFrom(*this->net_->blob_by_name("data"), true, true);
+  const Dtype *loss_ptr = this->net_->output_blobs()[0]->cpu_data();
+  Dtype loss = *loss_ptr;
+
+  // Check that combining partial Forwards gives the same loss.
+  for (int i = 1; i < this->net_->layers().size(); ++i) {
+    // Note that we skip layer zero to keep the same data.
+    this->net_->ForwardFromTo(1, 1);
+    if (i < this->net_->layers().size() - 1) {
+      this->net_->ForwardFrom(i + 1);
+    }
+    EXPECT_EQ(loss, *loss_ptr);
+  }
+
+  // Check that combining partial Backwards gives the same data diff.
+  for (int i = 1; i < this->net_->layers().size(); ++i) {
+    this->net_->BackwardTo(i);
+    this->net_->BackwardFrom(i - 1);
+    for (int j = 0; j < data.count(); ++j) {
+      EXPECT_EQ(data.cpu_diff()[j],
+          this->net_->blob_by_name("data")->cpu_diff()[j]);
+    }
   }
 }
 
