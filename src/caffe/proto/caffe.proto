@@ -215,7 +215,6 @@ message LayerParameter {
   optional ReLUParameter relu_param = 30;
   optional WindowDataParameter window_data_param = 20;
   optional ThresholdParameter threshold_param = 25;
-  optional HingeLossParameter hinge_loss_param = 29;
   optional SliceParameter slice_param = 31;
   optional TripletRankingHingeLossParameter triplet_ranking_hinge_loss_param = 32;
 
