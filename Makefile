@@ -117,6 +117,8 @@ EXAMPLE_BUILD_DIRS += $(foreach obj,$(EXAMPLE_OBJS),$(dir $(obj)))
 # tool, example, and test bins
 TOOL_BINS := ${TOOL_OBJS:.o=.bin}
 EXAMPLE_BINS := ${EXAMPLE_OBJS:.o=.bin}
+# symlinks to tool bins without the ".bin" extension
+TOOL_BIN_LINKS := ${TOOL_BINS:.bin=}
 # Put the test binaries in build/test for convenience.
 TEST_BIN_DIR := $(BUILD_DIR)/test
 TEST_CU_BINS := $(addsuffix .testbin,$(addprefix $(TEST_BIN_DIR)/, \
@@ -155,8 +157,8 @@ ifneq ($(CPU_ONLY), 1)
 	LIBRARY_DIRS += $(CUDA_LIB_DIR)
 	LIBRARIES := cudart cublas curand
 endif
-LIBRARIES += pthread \
-	glog protobuf leveldb snappy \
+LIBRARIES += \
+	glog gflags pthread protobuf leveldb snappy \
 	lmdb \
 	boost_system \
 	hdf5_hl hdf5 \
@@ -329,7 +331,7 @@ $(LINT_OUTPUTS): $(LINT_OUTPUT_DIR)/%.lint.txt : % | $(LINT_OUTPUT_DIR)
 
 test: $(TEST_ALL_BIN) $(TEST_BINS)
 
-tools: $(TOOL_BINS)
+tools: $(TOOL_BINS) $(TOOL_BIN_LINKS)
 
 examples: $(EXAMPLE_BINS)
 
@@ -353,6 +355,7 @@ $(MAT$(PROJECT)_SO): $(MAT$(PROJECT)_SRC) $(STATIC_NAME)
 		exit 1; \
 	fi
 	$(MATLAB_DIR)/bin/mex $(MAT$(PROJECT)_SRC) \
+			CXX="$(CXX)" \
 			CXXFLAGS="\$$CXXFLAGS $(MATLAB_CXXFLAGS)" \
 			CXXLIBS="\$$CXXLIBS $(STATIC_NAME) $(LDFLAGS)" -output $@
 	@ echo
@@ -431,6 +434,11 @@ $(TEST_CXX_BINS): $(TEST_BIN_DIR)/%.testbin: $(TEST_BUILD_DIR)/%.o $(GTEST_OBJ) 
 	$(CXX) $(TEST_MAIN_SRC) $< $(GTEST_OBJ) $(STATIC_NAME) \
 		-o $@ $(LINKFLAGS) $(LDFLAGS)
 	@ echo
+
+# Target for extension-less symlinks to tool binaries with extension '*.bin'.
+$(TOOL_BUILD_DIR)/%: $(TOOL_BUILD_DIR)/%.bin | $(TOOL_BUILD_DIR)
+	@ $(RM) $@
+	@ ln -s $(abspath $<) $@
 
 $(TOOL_BINS): %.bin : %.o $(STATIC_NAME)
 	$(CXX) $< $(STATIC_NAME) -o $@ $(LINKFLAGS) $(LDFLAGS)

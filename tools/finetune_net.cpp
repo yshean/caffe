@@ -8,8 +8,6 @@
 #include <iostream>
 #include "caffe/caffe.hpp"
 
-using namespace caffe;  // NOLINT(build/namespaces)
-
 int main(int argc, char** argv) {
   ::google::InitGoogleLogging(argv[0]);
   if (argc != 3) {
@@ -30,5 +28,7 @@ int main(int argc, char** argv) {
   std::cout << "Optimization..." << std::endl;
   solver.Solve();
   std::cout << "Optimization Done" << std::endl;
+  LOG(FATAL) << "Deprecated. Use caffe.bin train --solver_proto_file=... "
+                "[--pretrained_net_file=...] instead.";
   return 0;
 }
