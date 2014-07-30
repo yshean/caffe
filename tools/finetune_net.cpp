@@ -15,16 +15,16 @@ int main(int argc, char** argv) {
     return 1;
   }
   std::cout << "SolverParam Generation..." << std::endl;
-  SolverParameter solver_param;
+  caffe::SolverParameter solver_param;
   std::cout << "Reading Proto..." << std::endl;
   ReadProtoFromTextFileOrDie(argv[1], &solver_param);
 
   std::cout << "Starting optimization" << std::endl;
   
-  SGDSolver<float> solver(solver_param);
+  caffe::SGDSolver<float> solver(solver_param);
   std::cout <<  "Loading from " << argv[2] << std::endl;
   LOG(INFO) << "Loading from " << argv[2];
-  solver.net()->CopyTrainedLayersFrom(string(argv[2]));
+  solver.net()->CopyTrainedLayersFrom(std::string(argv[2]));
   std::cout << "Optimization..." << std::endl;
   solver.Solve();
   std::cout << "Optimization Done" << std::endl;
