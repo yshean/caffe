@@ -249,12 +249,12 @@ ifeq ($(BLAS), mkl)
 	# MKL
 	LIBRARIES += mkl_rt
 	COMMON_FLAGS += -DUSE_MKL
-	MKL_DIR = /opt/intel/mkl
+	MKL_DIR ?= /opt/intel/mkl
 	BLAS_INCLUDE ?= $(MKL_DIR)/include
 	BLAS_LIB ?= $(MKL_DIR)/lib $(MKL_DIR)/lib/intel64
 else ifeq ($(BLAS), open)
 	# OpenBLAS
-	LIBRARIES += openblas
+	LIBRARIES += blas
 else
 	# ATLAS
 	ifeq ($(LINUX), 1)
@@ -301,9 +301,9 @@ SUPERCLEAN_EXTS := .so .a .o .bin .testbin .pb.cc .pb.h _pb2.py .cuo
 	py mat py$(PROJECT) mat$(PROJECT) proto runtest \
 	superclean supercleanlist supercleanfiles warn everything
 
-everything: all py$(PROJECT) mat$(PROJECT) test warn lint runtest
-
 all: $(NAME) $(STATIC_NAME) tools examples
+
+everything: all py$(PROJECT) mat$(PROJECT) test warn lint runtest
 
 linecount:
 	cloc --read-lang-def=$(PROJECT).cloc src/$(PROJECT)/
