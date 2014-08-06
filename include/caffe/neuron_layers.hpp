@@ -7,9 +7,9 @@
 #include <utility>
 #include <vector>
 
-#include "pthread.h"
 #include "boost/scoped_ptr.hpp"
 #include "hdf5.h"
+#include "pthread.h"
 
 #include "caffe/blob.hpp"
 #include "caffe/common.hpp"
@@ -100,7 +100,7 @@ class DropoutLayer : public NeuronLayer<Dtype> {
   virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom);
 
-  shared_ptr<Blob<unsigned int> > rand_vec_;
+  Blob<unsigned int> rand_vec_;
   Dtype threshold_;
   Dtype scale_;
   unsigned int uint_thres_;

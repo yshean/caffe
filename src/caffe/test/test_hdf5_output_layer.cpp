@@ -4,11 +4,13 @@
 #include <vector>
 
 #include "gtest/gtest.h"
+
 #include "caffe/blob.hpp"
 #include "caffe/common.hpp"
+#include "caffe/proto/caffe.pb.h"
 #include "caffe/util/io.hpp"
 #include "caffe/vision_layers.hpp"
-#include "caffe/proto/caffe.pb.h"
+
 #include "caffe/test/test_caffe_main.hpp"
 
 using std::string;
@@ -62,7 +64,7 @@ void HDF5OutputLayerTest<TypeParam>::CheckBlobEqual(const Blob<Dtype>& b1,
     for (int c = 0; c < b1.channels(); ++c) {
       for (int h = 0; h < b1.height(); ++h) {
         for (int w = 0; w < b1.width(); ++w) {
-          EXPECT_EQ(b1.data_at(n, c, h, w), b1.data_at(n, c, h, w));
+          EXPECT_EQ(b1.data_at(n, c, h, w), b2.data_at(n, c, h, w));
         }
       }
     }

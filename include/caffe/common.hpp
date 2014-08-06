@@ -6,6 +6,7 @@
 #include <boost/shared_ptr.hpp>
 #include <glog/logging.h>
 
+#include <cmath>
 #include <map>
 #include <set>
 #include <string>
@@ -71,6 +72,7 @@ using boost::shared_ptr;
 // Common functions and classes from std that caffe often uses.
 using std::fstream;
 using std::ios;
+using std::isnan;
 using std::iterator;
 using std::make_pair;
 using std::map;
@@ -79,6 +81,10 @@ using std::pair;
 using std::set;
 using std::string;
 using std::vector;
+
+// A global initialization function that you should call in your main function.
+// Currently it initializes google flags and google logging.
+void GlobalInit(int* pargc, char*** pargv);
 
 // A singleton class to hold common caffe stuff, such as the handler that
 // caffe is going to use for cublas, curand, etc.

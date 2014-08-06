@@ -4,8 +4,8 @@
 #define CAFFE_BLOB_HPP_
 
 #include "caffe/common.hpp"
-#include "caffe/syncedmem.hpp"
 #include "caffe/proto/caffe.pb.h"
+#include "caffe/syncedmem.hpp"
 #include "caffe/util/math_functions.hpp"
 
 namespace caffe {
@@ -75,6 +75,10 @@ class Blob {
   void Update();
   void FromProto(const BlobProto& proto);
   void ToProto(BlobProto* proto, bool write_diff = false) const;
+
+  // Compute the sum of absolute values (L1 norm) of the data or diff.
+  Dtype asum_data() const;
+  Dtype asum_diff() const;
 
   // Set the data_/diff_ shared_ptr to point to the SyncedMemory holding the
   // data_/diff_ of Blob other -- useful in layers which simply perform a copy
