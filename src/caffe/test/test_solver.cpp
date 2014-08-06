@@ -5,8 +5,8 @@
 #include <vector>
 
 #include "google/protobuf/text_format.h"
-
 #include "gtest/gtest.h"
+
 #include "caffe/common.hpp"
 #include "caffe/proto/caffe.pb.h"
 #include "caffe/solver.hpp"
@@ -96,7 +96,7 @@ TYPED_TEST(SolverTest, TestInitTrainTestNets) {
      "  } "
      "} ";
   this->InitSolverFromProtoString(proto);
-  ASSERT_TRUE(this->solver_->net());
+  ASSERT_TRUE(this->solver_->net() != NULL);
   EXPECT_TRUE(this->solver_->net()->has_layer("loss"));
   EXPECT_FALSE(this->solver_->net()->has_layer("accuracy"));
   ASSERT_EQ(2, this->solver_->test_nets().size());
