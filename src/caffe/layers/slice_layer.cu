@@ -1,5 +1,3 @@
-// Copyright 2014 BVLC and contributors.
-
 #include <vector>
 
 #include "caffe/layer.hpp"
@@ -9,7 +7,7 @@
 namespace caffe {
 
 template <typename Dtype>
-Dtype SliceLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+void SliceLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
   const Dtype* bottom_data = bottom[0]->mutable_gpu_data();
   if (slice_dim_ == 0) {
@@ -34,7 +32,6 @@ Dtype SliceLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       offset_channel += blob->channels();
     }
   }  // slice_dim_ is guaranteed to be 0 or 1 by SetUp.
-  return Dtype(0.);
 }
 
 template <typename Dtype>

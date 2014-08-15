@@ -1,5 +1,3 @@
-// Copyright 2014 BVLC and contributors.
-
 #include <string>
 #include <vector>
 
@@ -14,7 +12,7 @@
 namespace caffe {
 
 template <typename Dtype>
-Dtype DataLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+void DataLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
   // First, join the thread
   JoinPrefetchThread();
@@ -27,7 +25,6 @@ Dtype DataLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   }
   // Start a new prefetch thread
   CreatePrefetchThread();
-  return Dtype(0.);
 }
 
 INSTANTIATE_CLASS(DataLayer);

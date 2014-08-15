@@ -1,5 +1,3 @@
-// Copyright 2014 BVLC and contributors.
-
 #include <algorithm>
 #include <cfloat>
 #include <vector>
@@ -11,10 +9,9 @@
 namespace caffe {
 
 template <typename Dtype>
-Dtype SoftmaxWithLossLayer<Dtype>::Forward_gpu(
+void SoftmaxWithLossLayer<Dtype>::Forward_gpu(
     const vector<Blob<Dtype>*>& bottom, vector<Blob<Dtype>*>* top) {
-  // The forward pass computes the softmax prob values.
-  return Forward_cpu(bottom, top);
+  Forward_cpu(bottom, top);
 }
 
 template <typename Dtype>
