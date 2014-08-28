@@ -75,7 +75,7 @@ int main(int argc, char** argv) {
     const vector<shared_ptr<Blob<float> > >& blobs = caffe_net->blobs();
     for (int blobid = 0; blobid < caffe_net->blobs().size(); ++blobid) {
         // Serialize blob
-        if ((blobid == 10) || (blobid ==13) || (blobid ==15))
+        if ((blobid == 10) || (blobid ==13) || (blobid ==14))
         {
             LOG(ERROR) << "Dumping " << blob_names[blobid];
             BlobProto output_blob_proto;

@@ -153,6 +153,24 @@ classdef CaffeNet < handle
             self.weights_changed = true;
             res = self.init_key;
         end
+        function res = add_net(self, model_def_file, model_file)
+            self.init_key = caffe_safe('add_net',model_def_file, model_file);
+            assert(is_initialized(self))
+            self.model_def_file = model_def_file;
+            self.model_file = model_file;
+            self.layers_info = caffe_safe('get_layers_info');
+            self.blobs_info = caffe_safe('get_blobs_info');
+            self.weights_changed = true;
+            res = self.init_key;
+        end
+        function res = select_net(self, init_key)
+            self.init_key = caffe_safe('select_net',init_key);
+            assert(is_initialized(self))
+            self.layers_info = caffe_safe('get_layers_info');
+            self.blobs_info = caffe_safe('get_blobs_info');
+            self.weights_changed = true;
+            res = self.init_key;
+        end
         function res = init_net(self, model_def_file)
             self.init_key = caffe_safe('init_net',model_def_file);
             assert(is_initialized(self))

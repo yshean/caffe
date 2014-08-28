@@ -65,6 +65,7 @@ static void CheckFile(const string& filename) {
 }
 
 // The pointer to the internal caffe::Net instance
+static vector<shared_ptr<Net<float> > > net_vector;
 static shared_ptr<Net<float> > net_;
 static int init_key = -2;
 
@@ -903,6 +904,45 @@ static void init_net(MEX_ARGS) {
   }
 }
 
+static void add_net(MEX_ARGS) {
+  if (nrhs != 2) {
+    LOG(ERROR) << "Only given " << nrhs << " arguments";
+    mexErrMsgTxt("Wrong number of arguments");
+  }
+  
+  char* param_file = mxArrayToString(prhs[0]);
+  char* model_file = mxArrayToString(prhs[1]);
+  CheckFile(string(param_file));
+  net_.reset(new Net<float>(string(param_file)));
+  CheckFile(string(model_file));
+  net_->CopyTrainedLayersFrom(string(model_file));
+
+  mxFree(param_file);
+  mxFree(model_file);
+
+
+  net_vector.push_back(net_);
+    init_key = net_vector.size()-1;  // NOLINT(caffe/random_fn)
+}
+static void select_net(MEX_ARGS) {
+  if (nrhs != 1) {
+    LOG(ERROR) << "Given " << nrhs << " arguments";
+    mexErrMsgTxt("Wrong number of arguments");
+  }
+  if (net_) {
+    init_key = mxGetScalar(prhs[0]);
+    shared_ptr<Net<float> > curr_net = net_vector[init_key];
+    net_ = curr_net;
+
+    if (nlhs == 1) {
+      plhs[0] = mxCreateDoubleScalar(init_key);
+    }
+  } else {
+    mexErrMsgTxt("Need to initialize the network first with init_net");
+  }
+}
+
+
 static void load_net(MEX_ARGS) {
   if (nrhs != 1) {
     LOG(ERROR) << "Given " << nrhs << " arguments";
@@ -1065,6 +1105,8 @@ static handler_registry handlers[] = {
   { "get_all_diff",       get_all_diff      },
   { "get_init_key",       get_init_key      },
   { "reset",              reset             },
+  { "add_net",            add_net           },
+  { "select_net",         select_net        },  
   // The end.
   { "END",                NULL              },
 };
