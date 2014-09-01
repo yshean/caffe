@@ -13,7 +13,7 @@
 
 namespace caffe {
 
-// This function is used to create a pthread that prefetches the data.
+// This function is used to create a thread that prefetches the data.
 template <typename Dtype>
 void DataLayer<Dtype>::InternalThreadEntry() {
   Datum datum;
@@ -244,12 +244,12 @@ void DataLayer<Dtype>::CreatePrefetchThread() {
 
   data_transformer_.InitRand();
 
-  CHECK(StartInternalThread()) << "Pthread execution failed";
+  CHECK(StartInternalThread()) << "Thread execution failed";
 }
 
 template <typename Dtype>
 void DataLayer<Dtype>::JoinPrefetchThread() {
-  CHECK(!WaitForInternalThreadToExit()) << "Pthread joining failed";
+  CHECK(WaitForInternalThreadToExit()) << "Thread joining failed";
 }
 
 template <typename Dtype>
