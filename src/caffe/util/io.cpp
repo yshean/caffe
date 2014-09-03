@@ -1,9 +1,8 @@
-// Copyright 2014 BVLC and contributors.
-
 #include <fcntl.h>
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <google/protobuf/text_format.h>
+#include <leveldb/db.h>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/highgui/highgui_c.h>
@@ -74,7 +73,7 @@ bool ReadImageToDatum(const string& filename, const int label,
     CV_LOAD_IMAGE_GRAYSCALE);
   if (height > 0 && width > 0) {
     cv::Mat cv_img_origin = cv::imread(filename, cv_read_flag);
-    cv::resize(cv_img_origin, cv_img, cv::Size(height, width));
+    cv::resize(cv_img_origin, cv_img, cv::Size(width, height));
   } else {
     cv_img = cv::imread(filename, cv_read_flag);
   }
@@ -108,6 +107,14 @@ bool ReadImageToDatum(const string& filename, const int label,
       }
   }
   return true;
+}
+
+leveldb::Options GetLevelDBOptions() {
+  // In default, we will return the leveldb option and set the max open files
+  // in order to avoid using up the operating system's limit.
+  leveldb::Options options;
+  options.max_open_files = 100;
+  return options;
 }
 
 // Verifies format of data stored in HDF5 file and reshapes blob accordingly.

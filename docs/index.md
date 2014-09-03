@@ -4,7 +4,7 @@ layout: default
 # Caffe
 
 Caffe is a deep learning framework developed with cleanliness, readability, and speed in mind.
-It was created by [Yangqing Jia](http://daggerfs.com), and is in active development by the Berkeley Vision and Learning Center ([BVLC](http://bvlc.eecs.berkeley.edu)) and by community contributors.
+It was created by [Yangqing Jia](http://daggerfs.com) during his PhD at UC Berkeley, and is in active development by the Berkeley Vision and Learning Center ([BVLC](http://bvlc.eecs.berkeley.edu)) and by community contributors.
 Caffe is released under the [BSD 2-Clause license](https://github.com/BVLC/caffe/blob/master/LICENSE).
 
 Check out our web image classification [demo](http://demo.caffe.berkeleyvision.org)!
@@ -46,18 +46,16 @@ Guidelines for development and contributing to Caffe.
 
 ### Examples
 
-{% for page in site.pages %}
-{% if page.category == 'example' %}
+{% assign examples = site.pages | where:'category','example' | sort: 'priority' %}
+{% for page in examples %}
 - <div><a href="{{page.url}}">{{page.title}}</a><br />{{page.description}}</div>
-{% endif %}
 {% endfor %}
 
 ### Notebook examples
 
-{% for page in site.pages %}
-{% if page.category == 'notebook' %}
+{% assign notebooks = site.pages | where:'category','notebook' %}
+{% for page in notebooks %}
 - <div><a href="http://nbviewer.ipython.org/github/BVLC/caffe/blob/master/{{page.original_path}}">{{page.title}}</a><br />{{page.description}}</div>
-{% endif %}
 {% endfor %}
 
 ## Citing Caffe
@@ -68,7 +66,7 @@ Please cite Caffe in your publications if it helps your research:
        Author = {Yangqing Jia},
        Title = { {Caffe}: An Open Source Convolutional Architecture for Fast Feature Embedding},
        Year  = {2013},
-       Howpublished = {\url{http://caffe.berkeleyvision.org/}
+       Howpublished = {\url{http://caffe.berkeleyvision.org/}}
     }
 
 If you do publish a paper where Caffe helped your research, we encourage you to update the [publications wiki](https://github.com/BVLC/caffe/wiki/Publications).
@@ -96,4 +94,4 @@ All development discussion should be carried out at [GitHub Issues](https://gith
 If you have a proposal that may not be suited for public discussion *and an ability to act on it*, please email us [directly](mailto:caffe-dev@googlegroups.com).
 Requests for features, explanations, or personal help will be ignored; post such matters publicly as issues.
 
-Some developers may be able to provide [consulting services](mailto:caffe-coldpress@googlegroups.com) for appropriate projects.
+The core Caffe developers may be able to provide [consulting services](mailto:caffe-coldpress@googlegroups.com) for appropriate projects.

@@ -1,5 +1,3 @@
-// Copyright 2014 BVLC and contributors.
-
 #ifndef CAFFE_COMMON_LAYERS_HPP_
 #define CAFFE_COMMON_LAYERS_HPP_
 
@@ -31,7 +29,7 @@ class ArgMaxLayer : public Layer<Dtype> {
  public:
   explicit ArgMaxLayer(const LayerParameter& param)
       : Layer<Dtype>(param) {}
-  virtual void SetUp(const vector<Blob<Dtype>*>& bottom,
+  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
 
   virtual inline LayerParameter_LayerType type() const {
@@ -41,7 +39,7 @@ class ArgMaxLayer : public Layer<Dtype> {
   virtual inline int ExactNumTopBlobs() const { return 1; }
 
  protected:
-  virtual Dtype Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
   virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom) {
@@ -60,7 +58,7 @@ class ConcatLayer : public Layer<Dtype> {
  public:
   explicit ConcatLayer(const LayerParameter& param)
       : Layer<Dtype>(param) {}
-  virtual void SetUp(const vector<Blob<Dtype>*>& bottom,
+  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
 
   virtual inline LayerParameter_LayerType type() const {
@@ -70,9 +68,9 @@ class ConcatLayer : public Layer<Dtype> {
   virtual inline int ExactNumTopBlobs() const { return 1; }
 
  protected:
-  virtual Dtype Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
-  virtual Dtype Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
   virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom);
@@ -88,6 +86,39 @@ class ConcatLayer : public Layer<Dtype> {
   int concat_dim_;
 };
 
+/* EltwiseLayer
+  Compute elementwise operations like product or sum.
+*/
+template <typename Dtype>
+class EltwiseLayer : public Layer<Dtype> {
+ public:
+  explicit EltwiseLayer(const LayerParameter& param)
+      : Layer<Dtype>(param) {}
+  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+      vector<Blob<Dtype>*>* top);
+
+  virtual inline LayerParameter_LayerType type() const {
+    return LayerParameter_LayerType_ELTWISE;
+  }
+  virtual inline int MinBottomBlobs() const { return 2; }
+  virtual inline int ExactNumTopBlobs() const { return 1; }
+
+ protected:
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+      vector<Blob<Dtype>*>* top);
+  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+      vector<Blob<Dtype>*>* top);
+  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom);
+  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom);
+
+  EltwiseParameter_EltwiseOp op_;
+  vector<Dtype> coeffs_;
+
+  bool stable_prod_grad_;
+};
+
 /* FlattenLayer
 */
 template <typename Dtype>
@@ -95,7 +126,7 @@ class FlattenLayer : public Layer<Dtype> {
  public:
   explicit FlattenLayer(const LayerParameter& param)
       : Layer<Dtype>(param) {}
-  virtual void SetUp(const vector<Blob<Dtype>*>& bottom,
+  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
 
   virtual inline LayerParameter_LayerType type() const {
@@ -105,9 +136,9 @@ class FlattenLayer : public Layer<Dtype> {
   virtual inline int ExactNumTopBlobs() const { return 1; }
 
  protected:
-  virtual Dtype Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
-  virtual Dtype Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
   virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom);
@@ -117,6 +148,71 @@ class FlattenLayer : public Layer<Dtype> {
   int count_;
 };
 
+/* InnerProductLayer
+*/
+template <typename Dtype>
+class InnerProductLayer : public Layer<Dtype> {
+ public:
+  explicit InnerProductLayer(const LayerParameter& param)
+      : Layer<Dtype>(param) {}
+  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+      vector<Blob<Dtype>*>* top);
+
+  virtual inline LayerParameter_LayerType type() const {
+    return LayerParameter_LayerType_INNER_PRODUCT;
+  }
+  virtual inline int ExactNumBottomBlobs() const { return 1; }
+  virtual inline int ExactNumTopBlobs() const { return 1; }
+
+ protected:
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+      vector<Blob<Dtype>*>* top);
+  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+      vector<Blob<Dtype>*>* top);
+  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom);
+  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom);
+
+  int M_;
+  int K_;
+  int N_;
+  bool bias_term_;
+  Blob<Dtype> bias_multiplier_;
+};
+
+/* MVNLayer
+ */
+template <typename Dtype>
+class MVNLayer : public Layer<Dtype> {
+ public:
+  explicit MVNLayer(const LayerParameter& param)
+      : Layer<Dtype>(param) {}
+  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+      vector<Blob<Dtype>*>* top);
+
+  virtual inline LayerParameter_LayerType type() const {
+    return LayerParameter_LayerType_MVN;
+  }
+  virtual inline int ExactNumBottomBlobs() const { return 1; }
+  virtual inline int ExactNumTopBlobs() const { return 1; }
+
+ protected:
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+      vector<Blob<Dtype>*>* top);
+  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+      vector<Blob<Dtype>*>* top);
+  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom);
+  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
+     const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom);
+
+  Blob<Dtype> mean_, variance_, temp_;
+
+  // sum_multiplier is just used to carry out sum using blas
+  Blob<Dtype> sum_multiplier_;
+};
+
 /* SoftmaxLayer
 */
 template <typename Dtype>
@@ -124,7 +220,7 @@ class SoftmaxLayer : public Layer<Dtype> {
  public:
   explicit SoftmaxLayer(const LayerParameter& param)
       : Layer<Dtype>(param) {}
-  virtual void SetUp(const vector<Blob<Dtype>*>& bottom,
+  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
 
   virtual inline LayerParameter_LayerType type() const {
@@ -134,9 +230,9 @@ class SoftmaxLayer : public Layer<Dtype> {
   virtual inline int ExactNumTopBlobs() const { return 1; }
 
  protected:
-  virtual Dtype Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
-  virtual Dtype Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
   virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom);
@@ -156,7 +252,7 @@ class SplitLayer : public Layer<Dtype> {
  public:
   explicit SplitLayer(const LayerParameter& param)
       : Layer<Dtype>(param) {}
-  virtual void SetUp(const vector<Blob<Dtype>*>& bottom,
+  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
 
   virtual inline LayerParameter_LayerType type() const {
@@ -166,9 +262,9 @@ class SplitLayer : public Layer<Dtype> {
   virtual inline int MinTopBlobs() const { return 1; }
 
  protected:
-  virtual Dtype Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
-  virtual Dtype Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
   virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom);
@@ -187,7 +283,7 @@ class SliceLayer : public Layer<Dtype> {
  public:
   explicit SliceLayer(const LayerParameter& param)
       : Layer<Dtype>(param) {}
-  virtual void SetUp(const vector<Blob<Dtype>*>& bottom,
+  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
 
   virtual inline LayerParameter_LayerType type() const {
@@ -197,9 +293,9 @@ class SliceLayer : public Layer<Dtype> {
   virtual inline int MinTopBlobs() const { return 2; }
 
  protected:
-  virtual Dtype Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
-  virtual Dtype Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
   virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom);

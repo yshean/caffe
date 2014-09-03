@@ -1,23 +1,9 @@
-// Copyright 2014 BVLC and contributors.
-
-#include <gflags/gflags.h>
 #include <glog/logging.h>
 #include <cstdio>
 #include <ctime>
 
 #include "caffe/common.hpp"
 #include "caffe/util/rng.hpp"
-
-// gflags 2.1 issue: namespace google was changed to gflags without warning.
-// Luckily we will be able to use GFLAGS_GFAGS_H_ to detect if it is version
-// 2.1. If yes , we will add a temporary solution to redirect the namespace.
-// TODO(Yangqing): Once gflags solves the problem in a more elegant way, let's
-// remove the following hack.
-#ifdef GFLAGS_GFLAGS_H_
-namespace google {
-using ::gflags::ParseCommandLineFlags;
-}  // namespace google
-#endif  // GFLAGS_GFLAGS_H_
 
 namespace caffe {
 
@@ -46,7 +32,7 @@ int64_t cluster_seedgen(void) {
 
 void GlobalInit(int* pargc, char*** pargv) {
   // Google flags.
-  ::google::ParseCommandLineFlags(pargc, pargv, true);
+  ::gflags::ParseCommandLineFlags(pargc, pargv, true);
   // Google logging.
   ::google::InitGoogleLogging(*(pargv)[0]);
 }
@@ -122,15 +108,11 @@ Caffe::~Caffe() {
 
 void Caffe::set_random_seed(const unsigned int seed) {
   // Curand seed
-  // Yangqing's note: simply setting the generator seed does not seem to
-  // work on the tesla K20s, so I wrote the ugly reset thing below.
   static bool g_curand_availability_logged = false;
   if (Get().curand_generator_) {
-    CURAND_CHECK(curandDestroyGenerator(curand_generator()));
-    CURAND_CHECK(curandCreateGenerator(&Get().curand_generator_,
-        CURAND_RNG_PSEUDO_DEFAULT));
     CURAND_CHECK(curandSetPseudoRandomGeneratorSeed(curand_generator(),
         seed));
+    CURAND_CHECK(curandSetGeneratorOffset(curand_generator(), 0));
   } else {
     if (!g_curand_availability_logged) {
         LOG(ERROR) <<
@@ -241,6 +223,10 @@ const char* cublasGetErrorString(cublasStatus_t error) {
 #if CUDA_VERSION >= 6000
   case CUBLAS_STATUS_NOT_SUPPORTED:
     return "CUBLAS_STATUS_NOT_SUPPORTED";
+#endif
+#if CUDA_VERSION >= 6050
+  case CUBLAS_STATUS_LICENSE_ERROR:
+    return "CUBLAS_STATUS_LICENSE_ERROR";
 #endif
   }
   return "Unknown cublas status";

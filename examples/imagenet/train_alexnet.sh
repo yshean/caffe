@@ -1,8 +1,5 @@
 #!/usr/bin/env sh
 
-TOOLS=../../build/tools
-
-GLOG_logtostderr=1 $TOOLS/caffe.bin train \
-  --solver_proto_file=alexnet_solver.prototxt
+./build/tools/caffe train --solver=examples/imagenet/alexnet_solver.prototxt
 
 echo "Done."
