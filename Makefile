@@ -1,6 +1,6 @@
 # The makefile for caffe. Pretty hacky.
 PROJECT := caffe
-
+CPU_ONLY :=1
 CONFIG_FILE := Makefile.config
 include $(CONFIG_FILE)
 
@@ -199,8 +199,8 @@ endif
 
 ifeq ($(LINUX), 1)
 
-	CXX := /usr/bin/g++-4.6
-#	CXX := /usr/bin/g++
+#	CXX := /usr/bin/g++-4.6
+	CXX := /usr/bin/g++
 
 #	CXX ?= /usr/bin/g++
 
@@ -257,7 +257,7 @@ ifeq ($(BLAS), mkl)
 	BLAS_LIB ?= $(MKL_DIR)/lib $(MKL_DIR)/lib/intel64
 else ifeq ($(BLAS), open)
 	# OpenBLAS
-	LIBRARIES += blas
+	LIBRARIES += openblas
 else
 	# ATLAS
 	ifeq ($(LINUX), 1)
