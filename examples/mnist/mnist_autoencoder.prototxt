@@ -4,7 +4,7 @@ layers {
   name: "data"
   type: DATA
   data_param {
-    source: "examples/mnist/mnist_train_lmdb"
+    source: "mnist_train_lmdb"
     backend: LMDB
     batch_size: 100
     transform_param {
@@ -18,7 +18,7 @@ layers {
   name: "data"
   type: DATA
   data_param {
-    source: "examples/mnist/mnist_train_lmdb"
+    source: "mnist_train_lmdb"
     backend: LMDB
     batch_size: 100
     transform_param {
@@ -35,7 +35,7 @@ layers {
   name: "data"
   type: DATA
   data_param {
-    source: "examples/mnist/mnist_test_lmdb"
+    source: "mnist_test_lmdb"
     backend: LMDB
     batch_size: 100
     transform_param {
@@ -286,4 +286,15 @@ layers {
   name: "loss"
   type: EUCLIDEAN_LOSS
   loss_weight: 0
+  include: { phase: TRAIN }
+}
+
+layers {
+  bottom: "decode1neuron"
+  bottom: "flatdata"
+  top: "l2_error"
+  name: "loss"
+  type: EUCLIDEAN_LOSS
+  loss_weight: 1
+  include: { phase: TEST }
 }
