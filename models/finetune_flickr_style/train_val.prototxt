@@ -1,33 +1,37 @@
-name: "CaffeNet"
+name: "FlickrStyleCaffeNet"
 layers {
   name: "data"
-  type: DATA
+  type: IMAGE_DATA
   top: "data"
   top: "label"
-  data_param {
-    source: "examples/imagenet/ilsvrc12_train_leveldb"
-    batch_size: 256
-    transform_param {
-      crop_size: 227
-      mean_file: "data/ilsvrc12/imagenet_mean.binaryproto"
-      mirror: true
-    }
+  image_data_param {
+    source: "data/flickr_style/train.txt"
+    batch_size: 50
+    new_height: 256
+    new_width: 256
+  }
+  transform_param {
+    crop_size: 227
+    mean_file: "data/ilsvrc12/imagenet_mean.binaryproto"
+    mirror: true
   }
   include: { phase: TRAIN }
 }
 layers {
   name: "data"
-  type: DATA
+  type: IMAGE_DATA
   top: "data"
   top: "label"
-  data_param {
-    source: "examples/imagenet/ilsvrc12_val_leveldb"
+  image_data_param {
+    source: "data/flickr_style/train.txt"
     batch_size: 50
-    transform_param {
-      crop_size: 227
-      mean_file: "data/ilsvrc12/imagenet_mean.binaryproto"
-      mirror: false
-    }
+    new_height: 256
+    new_width: 256
+  }
+  transform_param {
+    crop_size: 227
+    mean_file: "data/ilsvrc12/imagenet_mean.binaryproto"
+    mirror: false
   }
   include: { phase: TEST }
 }
@@ -275,6 +279,7 @@ layers {
   type: INNER_PRODUCT
   bottom: "fc6"
   top: "fc7"
+  # Note that blobs_lr can be set to 0 to disable any fine-tuning of this, and any other, layer
   blobs_lr: 1
   blobs_lr: 2
   weight_decay: 1
@@ -307,16 +312,17 @@ layers {
   }
 }
 layers {
-  name: "fc8"
+  name: "fc8_flickr"
   type: INNER_PRODUCT
   bottom: "fc7"
-  top: "fc8"
-  blobs_lr: 1
-  blobs_lr: 2
+  top: "fc8_flickr"
+  # blobs_lr is set to higher than for other layers, because this layer is starting from random while the others are already trained
+  blobs_lr: 10
+  blobs_lr: 20
   weight_decay: 1
   weight_decay: 0
   inner_product_param {
-    num_output: 1000
+    num_output: 20
     weight_filler {
       type: "gaussian"
       std: 0.01
@@ -328,17 +334,16 @@ layers {
   }
 }
 layers {
+  name: "loss"
+  type: SOFTMAX_LOSS
+  bottom: "fc8_flickr"
+  bottom: "label"
+}
+layers {
   name: "accuracy"
   type: ACCURACY
-  bottom: "fc8"
+  bottom: "fc8_flickr"
   bottom: "label"
   top: "accuracy"
   include: { phase: TEST }
-}
-layers {
-  name: "loss"
-  type: SOFTMAX_LOSS
-  bottom: "fc8"
-  bottom: "label"
-  top: "loss"
 }
