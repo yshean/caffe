@@ -38,7 +38,7 @@
     fprintf(stderr, "%s:%d: Check failed because %s != %s\n",   \
             __FILE__, __LINE__, #a, #b);                        \
     fprintf(stderr, "%s:%d: %s\n",                              \
-            __FILE__, __LINE__, #m);                            \
+            __FILE__, __LINE__, (m));                            \
     mexErrMsgTxt(#m);                                           \
   }                                                             \
 } while (0);
@@ -58,9 +58,10 @@ using namespace caffe;  // NOLINT(build/namespaces)
 // later if the input files are disturbed before they are actually used, but
 // this saves frustration in most cases)
 static void CheckFile(const string& filename) {
-    std::ifstream f(filename.c_str());
-    CHECK_EQ_MEX(f.good(), true, "Could not open file " + filename);
-    f.close();
+    std::ifstream file(filename.c_str());
+    std::string message = "Could not open file " + filename;
+    CHECK_EQ_MEX(file.good(), true, message.c_str());
+    file.close();
 }
 
 // The pointer to the internal caffe::Net instance
