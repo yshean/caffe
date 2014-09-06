@@ -38,8 +38,8 @@
     fprintf(stderr, "%s:%d: Check failed because %s != %s\n",   \
             __FILE__, __LINE__, #a, #b);                        \
     fprintf(stderr, "%s:%d: %s\n",                              \
-            __FILE__, __LINE__, (m));                            \
-    mexErrMsgTxt(#m);                                           \
+            __FILE__, __LINE__, (m));                           \
+    mexErrMsgTxt((m));                                          \
   }                                                             \
 } while (0);
 
@@ -241,11 +241,6 @@ static mxArray* do_forward_prefilled(mxArray* mx_loss) {
   const vector<Blob<float>*>& output_blobs = net_->ForwardPrefilled(loss_ptr);
   DLOG(INFO) << "loss: " << mxGetScalar(mx_loss);
   mxArray* mx_out = blobs_data_to_cell(output_blobs);
-  // mxArray* mx_out = mxCreateCellMatrix(output_blobs.size(), 1);
-  // for (unsigned int i = 0; i < output_blobs.size(); ++i) {
-  //   mxArray* mx_blob =  blob_data_to_mxarray(output_blobs[i]);
-  //   mxSetCell(mx_out, i, mx_blob);
-  // }
   return mx_out;
 }
 
@@ -272,11 +267,6 @@ static mxArray* do_backward_prefilled() {
   net_->Backward();
   DLOG(INFO) << "End";
   mxArray* mx_out = blobs_diff_to_cell(input_blobs);
-  // mxArray* mx_out = mxCreateCellMatrix(input_blobs.size(), 1);
-  // for (unsigned int i = 0; i < input_blobs.size(); ++i) {
-  //   mxArray* mx_blob =  blob_diff_to_mxarray(input_blobs[i]);
-  //   mxSetCell(mx_out, i, mx_blob);
-  // }
   return mx_out;
 }
 
@@ -339,12 +329,6 @@ static mxArray* do_get_weights() {
         prev_layer_name = layer_names[i];
         // Copy weights
         mx_layer_weights = blobs_data_to_cell(layer_blobs);
-        // const mwSize dims[2] = {static_cast<mwSize>(layer_blobs.size()), 1};
-        // mx_layer_cells = mxCreateCellArray(2, dims);
-        // for (unsigned int j = 0; j < layer_blobs.size(); ++j) {
-        //   mxArray* mx_weights = blob_data_to_mxarray(layer_blobs[j]);
-        //   mxSetCell(mx_layer_cells, j, mx_weights);
-        // }
         // Create Struct
         mxSetField(mx_layers, mx_layer_index, "weights", mx_layer_weights);
         mxSetField(mx_layers, mx_layer_index, "layer_names",
@@ -372,15 +356,6 @@ static mxArray* do_get_layer_weights(const mxArray* const layer_name) {
         continue;
       }
       mx_layer_weights = blobs_data_to_cell(layer_blobs);
-      // const mwSize dims[2] = {layer_blobs.size(), 1};
-      // mx_layer_weights = mxCreateCellArray(2, dims);
-      // DLOG(INFO) << "layer_blobs.size()" << layer_blobs.size();
-      // for (unsigned int j = 0; j < layer_blobs.size(); ++j) {
-      //   // internally data is stored as (width, height, channels, num)
-      //   // where width is the fastest dimension
-      //   mxArray* mx_weights = blob_data_to_mxarray(layer_blobs[j]);
-      //   mxSetCell(mx_layer_weights, j, mx_weights);
-      // }
     }
   }
   return mx_layer_weights;
@@ -407,8 +382,6 @@ static void do_set_layer_weights(const mxArray* const layer_name,
         layer_blobs.size(), "Num of cells don't match layer_blobs.size");
       DLOG(INFO) << "layer_blobs.size() = " << layer_blobs.size();
       for (unsigned int j = 0; j < layer_blobs.size(); ++j) {
-        // internally data is stored as (width, height, channels, num)
-        // where width is the fastest dimension
         const mxArray* const elem = mxGetCell(mx_layer_weights, j);
         mxarray_to_blob_data(elem, layer_blobs[j]);
       }
@@ -502,8 +475,6 @@ static mxArray* do_get_blobs_info() {
 
 
 static mxArray* do_get_blob_data(const mxArray* const blob_name) {
-  // const vector<shared_ptr<Blob<float> > >& blobs = net_->blobs();
-  // const vector<string>& blob_names = net_->blob_names();
 
   char* c_blob_name = mxArrayToString(blob_name);
   DLOG(INFO) << "Looking for: " << c_blob_name;
@@ -513,19 +484,10 @@ static mxArray* do_get_blob_data(const mxArray* const blob_name) {
     mx_blob_data = blob_data_to_mxarray(net_->blob_by_name(c_blob_name).get());
   }
 
-  // for (unsigned int i = 0; i < blobs.size(); ++i) {
-  //   DLOG(INFO) << blob_names[i];
-  //   if (strcmp(blob_names[i].c_str(), c_blob_name) == 0) {
-  //     mx_blob_data = blob_data_to_mxarray(blobs[i]);
-  //   }
-  // }
-
   return mx_blob_data;
 }
 
 static mxArray* do_get_blob_diff(const mxArray* const blob_name) {
-  // const vector<shared_ptr<Blob<float> > >& blobs = net_->blobs();
-  // const vector<string>& blob_names = net_->blob_names();
 
   char* c_blob_name = mxArrayToString(blob_name);
   DLOG(INFO) << "Looking for: " << c_blob_name;
@@ -534,13 +496,6 @@ static mxArray* do_get_blob_diff(const mxArray* const blob_name) {
   if (net_->has_blob(c_blob_name)) {
     mx_blob_diff = blob_diff_to_mxarray(net_->blob_by_name(c_blob_name).get());
   }
-
-  // for (unsigned int i = 0; i < blobs.size(); ++i) {
-  //   DLOG(INFO) << blob_names[i];
-  //   if (strcmp(blob_names[i].c_str(),c_blob_name) == 0) {
-  //     mx_blob_diff = blob_diff_to_mxarray(blobs[i]);
-  //   }
-  // }
 
   return mx_blob_diff;
 }
