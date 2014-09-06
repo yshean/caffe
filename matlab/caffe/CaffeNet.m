@@ -1,7 +1,7 @@
 classdef CaffeNet < handle
     properties (SetAccess = private)
-        model_def_file = '../../examples/imagenet/imagenet_deploy.prototxt';
-        model_file = '../../examples/imagenet/caffe_reference_imagenet_model';
+	model_def_file = '../../models/bvlc_reference_caffenet/deploy.prototxt';
+	model_file = '../../models/bvlc_reference_caffenet/bvlc_reference_caffenet.caffemodel';
         layers_info
         blobs_info
     end
