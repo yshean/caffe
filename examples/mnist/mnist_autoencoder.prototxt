@@ -35,13 +35,13 @@ layers {
   name: "data"
   type: DATA
   data_param {
-    source: "examples/mnist/mnist_test_lmdb"
+    source: "mnist_test_lmdb"
     backend: LMDB
     batch_size: 100
-    transform_param {
+  }
+  transform_param {
       scale: 0.0039215684
     }
-  }
   include: {
     phase: TEST
     stage: 'test-on-test'
