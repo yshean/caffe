@@ -65,7 +65,6 @@ static void CheckFile(const string& filename) {
 }
 
 // The pointer to the internal caffe::Net instance
-static vector<shared_ptr<Net<float> > > net_vector;
 static shared_ptr<Net<float> > net_;
 static int init_key = -2;
 
@@ -285,87 +284,6 @@ static void do_set_output_blobs(const mxArray* const top_diff) {
 static mxArray* do_backward(const mxArray* const top_diff) {
   do_set_output_blobs(top_diff);
   return do_backward_prefilled();
-}
-
-static void do_set_output_blobs(const mxArray* const top_diff) {
-  vector<Blob<float>*>& output_blobs = net_->output_blobs();
-  CHECK_EQ(static_cast<unsigned int>(mxGetDimensions(top_diff)[0]),
-      output_blobs.size());
-  // Copy top_diff to the output diff
-  for (unsigned int i = 0; i < output_blobs.size(); ++i) {
-    const mxArray* const elem = mxGetCell(top_diff, i);
-    CHECK_EQ(output_blobs[i]->count(),mxGetNumberOfElements(elem),
-      "output_blobs[i]->count() don't match with numel(top_diff{i})");
-    const float* const data_ptr =
-        reinterpret_cast<const float* const>(mxGetPr(elem));
-    switch (Caffe::mode()) {
-    case Caffe::CPU:
-      memcpy(output_blobs[i]->mutable_cpu_diff(), data_ptr,
-        sizeof(float) * output_blobs[i]->count());
-      break;
-    case Caffe::GPU:
-      cudaMemcpy(output_blobs[i]->mutable_gpu_diff(), data_ptr,
-        sizeof(float) * output_blobs[i]->count(), cudaMemcpyHostToDevice);
-      break;
-    default:
-      LOG(FATAL) << "Unknown Caffe mode.";
-    }  // switch (Caffe::mode())
-  }
-}
-
-static mxArray* do_backward(const mxArray* const top_diff) {
-  do_set_output_blobs(top_diff);
-  return do_backward_prefilled();
-
-  // vector<Blob<float>*>& output_blobs = net_->output_blobs();
-  // CHECK_EQ(static_cast<unsigned int>(mxGetDimensions(top_diff)[0]),
-  //     output_blobs.size());
-  // // First, copy the output diff
-  // for (unsigned int i = 0; i < output_blobs.size(); ++i) {
-  //   const mxArray* const elem = mxGetCell(top_diff, i);
-  //   CHECK_EQ(output_blobs[i]->count(),mxGetNumberOfElements(elem)) <<
-  //     "output_blobs[i]->count() don't match with numel(top_diff{i})";
-  //   const float* const data_ptr =
-  //       reinterpret_cast<const float* const>(mxGetPr(elem));
-  //   switch (Caffe::mode()) {
-  //   case Caffe::CPU:
-  //     memcpy(output_blobs[i]->mutable_cpu_diff(), data_ptr,
-  //       sizeof(float) * output_blobs[i]->count());
-  //     break;
-  //   case Caffe::GPU:
-  //     cudaMemcpy(output_blobs[i]->mutable_gpu_diff(), data_ptr,
-  //       sizeof(float) * output_blobs[i]->count(), cudaMemcpyHostToDevice);
-  //     break;
-  //   default:
-  //     LOG(FATAL) << "Unknown Caffe mode.";
-  //   }  // switch (Caffe::mode())
-  // }
-  // vector<Blob<float>*>& input_blobs = net_->input_blobs();
-  // LOG(INFO) << "Start";
-  // net_->Backward();
-  // LOG(INFO) << "End";
-  // mxArray* mx_out = mxCreateCellMatrix(input_blobs.size(), 1);
-  // for (unsigned int i = 0; i < input_blobs.size(); ++i) {
-  //   // internally data is stored as (width, height, channels, num)
-  //   // where width is the fastest dimension
-  //   mwSize dims[4] = {input_blobs[i]->width(), input_blobs[i]->height(),
-  //     input_blobs[i]->channels(), input_blobs[i]->num()};
-  //   mxArray* mx_blob =  mxCreateNumericArray(4, dims, mxSINGLE_CLASS, mxREAL);
-  //   mxSetCell(mx_out, i, mx_blob);
-  //   float* data_ptr = reinterpret_cast<float*>(mxGetPr(mx_blob));
-  //   switch (Caffe::mode()) {
-  //   case Caffe::CPU:
-  //     memcpy(data_ptr, input_blobs[i]->cpu_diff(),
-  //         sizeof(float) * input_blobs[i]->count());
-  //     break;
-  //   case Caffe::GPU:
-  //     cudaMemcpy(data_ptr, input_blobs[i]->gpu_diff(),
-  //         sizeof(float) * input_blobs[i]->count(), cudaMemcpyDeviceToHost);
-  //     break;
-  //   default:
-  //     LOG(FATAL) << "Unknown Caffe mode.";
-  //   }  // switch (Caffe::mode())
-  // }
 }
 
 static mxArray* do_get_weights() {
@@ -930,6 +848,30 @@ static void is_initialized(MEX_ARGS) {
   }
 }
 
+static void read_mean(MEX_ARGS) {
+    if (nrhs != 1) {
+        mexErrMsgTxt("Usage: caffe('read_mean', 'path_to_binary_mean_file'");
+        return;
+    }
+    const string& mean_file = mxArrayToString(prhs[0]);
+    Blob<float> data_mean;
+    LOG(INFO) << "Loading mean file from" << mean_file;
+    BlobProto blob_proto;
+    bool result = ReadProtoFromBinaryFile(mean_file.c_str(), &blob_proto);
+    if (!result) {
+        mexErrMsgTxt("Couldn't read the file");
+        return;
+    }
+    data_mean.FromProto(blob_proto);
+    mwSize dims[4] = {data_mean.width(), data_mean.height(),
+                      data_mean.channels(), data_mean.num() };
+    mxArray* mx_blob =  mxCreateNumericArray(4, dims, mxSINGLE_CLASS, mxREAL);
+    float* data_ptr = reinterpret_cast<float*>(mxGetPr(mx_blob));
+    caffe_copy(data_mean.count(), data_mean.cpu_data(), data_ptr);
+    mexWarnMsgTxt("Remember that Caffe saves in [width, height, channels]"
+                  " format and channels are also BGR!");
+    plhs[0] = mx_blob;
+}
 
 /** -----------------------------------------------------------------
  ** Available commands.
