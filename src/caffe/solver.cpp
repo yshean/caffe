@@ -32,11 +32,6 @@ void Solver<Dtype>::Init(const SolverParameter& param) {
   LOG(INFO) << "Initializing solver from parameters: " << std::endl
             << param.DebugString();
   param_ = param;
-  if (param_.solver_mode() == SolverParameter_SolverMode_GPU &&
-      param_.has_device_id()) {
-    Caffe::SetDevice(param_.device_id());
-  }
-  Caffe::set_mode(Caffe::Brew(param_.solver_mode()));
   if (param_.random_seed() >= 0) {
     Caffe::set_random_seed(param_.random_seed());
   }
@@ -184,7 +179,8 @@ void Solver<Dtype>::Solve(const char* resume_file) {
       Snapshot();
     }
 
-    if (param_.test_interval() && iter_ % param_.test_interval() == 0) {
+    if (param_.test_interval() && iter_ % param_.test_interval() == 0
+        && (iter_ > 0 || param_.test_initialization())) {
       TestAll();
     }
 
@@ -312,20 +308,21 @@ void Solver<Dtype>::Snapshot() {
   // For intermediate results, we will also dump the gradient values.
   net_->ToProto(&net_param, param_.snapshot_diff());
   string filename(param_.snapshot_prefix());
+  string model_filename, snapshot_filename;
   const int kBufferSize = 20;
   char iter_str_buffer[kBufferSize];
   snprintf(iter_str_buffer, kBufferSize, "_iter_%d", iter_);
   filename += iter_str_buffer;
-  filename += ".caffemodel";
-  LOG(INFO) << "Snapshotting to " << filename;
-  WriteProtoToBinaryFile(net_param, filename.c_str());
+  model_filename = filename + ".caffemodel";
+  LOG(INFO) << "Snapshotting to " << model_filename;
+  WriteProtoToBinaryFile(net_param, model_filename.c_str());
   SolverState state;
   SnapshotSolverState(&state);
   state.set_iter(iter_);
-  state.set_learned_net(filename);
-  filename += ".solverstate";
-  LOG(INFO) << "Snapshotting solver state to " << filename;
-  WriteProtoToBinaryFile(state, filename.c_str());
+  state.set_learned_net(model_filename);
+  snapshot_filename = filename + ".solverstate";
+  LOG(INFO) << "Snapshotting solver state to " << snapshot_filename;
+  WriteProtoToBinaryFile(state, snapshot_filename.c_str());
 }
 
 template <typename Dtype>

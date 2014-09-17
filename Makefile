@@ -151,7 +151,13 @@ NONEMPTY_WARN_REPORT := $(BUILD_DIR)/$(WARNS_EXT)
 # Derive include and lib directories
 ##############################
 CUDA_INCLUDE_DIR := $(CUDA_DIR)/include
-CUDA_LIB_DIR := $(CUDA_DIR)/lib64 $(CUDA_DIR)/lib
+
+CUDA_LIB_DIR :=
+# add <cuda>/lib64 only if it exists
+ifneq ("$(wildcard $(CUDA_DIR)/lib64)","")
+	CUDA_LIB_DIR += $(CUDA_DIR)/lib64
+endif
+CUDA_LIB_DIR += $(CUDA_DIR)/lib
 
 INCLUDE_DIRS += $(BUILD_INCLUDE_DIR) ./src ./include
 ifneq ($(CPU_ONLY), 1)
@@ -258,8 +264,15 @@ endif
 # Debugging
 ifeq ($(DEBUG), 1)
 	COMMON_FLAGS += -DDEBUG -g -O0
+	NVCCFLAGS += -G
 else
 	COMMON_FLAGS += -DNDEBUG -O2
+endif
+
+# cuDNN acceleration configuration.
+ifeq ($(USE_CUDNN), 1)
+	LIBRARIES += cudnn
+	COMMON_FLAGS += -DUSE_CUDNN
 endif
 
 # CPU-only configuration
@@ -304,7 +317,7 @@ LIBRARY_DIRS += $(BLAS_LIB)
 # Complete build flags.
 COMMON_FLAGS += $(foreach includedir,$(INCLUDE_DIRS),-I$(includedir))
 CXXFLAGS += -pthread -fPIC $(COMMON_FLAGS) $(WARNINGS)
-NVCCFLAGS := -ccbin=$(CXX) -Xcompiler -fPIC $(COMMON_FLAGS)
+NVCCFLAGS += -ccbin=$(CXX) -Xcompiler -fPIC $(COMMON_FLAGS)
 # mex may invoke an older gcc that is too liberal with -Wuninitalized
 MATLAB_CXXFLAGS := $(CXXFLAGS) -Wno-uninitialized
 LINKFLAGS += -fPIC $(COMMON_FLAGS) $(WARNINGS)
@@ -335,7 +348,9 @@ all: $(NAME) $(STATIC_NAME) tools examples
 everything: all py$(PROJECT) mat$(PROJECT) test warn lint runtest
 
 linecount:
-	cloc --read-lang-def=$(PROJECT).cloc src/$(PROJECT)/
+	cloc --read-lang-def=$(PROJECT).cloc \
+		src/$(PROJECT) include/$(PROJECT) tools examples \
+		python matlab
 
 lint: $(EMPTY_LINT_REPORT)
 
