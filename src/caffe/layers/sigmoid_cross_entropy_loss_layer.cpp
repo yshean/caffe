@@ -45,7 +45,7 @@ template <typename Dtype>
 void SigmoidCrossEntropyLossLayer<Dtype>::Backward_cpu(
     const vector<Blob<Dtype>*>& top, const vector<bool>& propagate_down,
     vector<Blob<Dtype>*>* bottom) {
-  if (propagate_down[1]) {
+ if (propagate_down[1]) { ///!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Changed
     LOG(FATAL) << this->type_name()
                << " Layer cannot backpropagate to label inputs.";
   }
