@@ -11,6 +11,27 @@
 #include "caffe/test/test_caffe_main.hpp"
 #include "caffe/test/test_gradient_check_util.hpp"
 
+template <typename T>
+std::vector<unsigned int> sort_indexes(const std::vector<T> &v, const int sortAscend = 1) {
+
+    // initialize original index locations
+    std::vector<unsigned int> idx(v.size());
+    for (unsigned int i = 0; i != idx.size(); ++i) idx[i] = i;
+
+    if (sortAscend)    // sort indexes based on comparing values in v
+    {
+        std::sort(idx.begin(), idx.end(),
+                  [&v](unsigned int i1,unsigned int i2) {return v[i1] < v[i2];});
+}
+else
+{
+std::sort(idx.begin(), idx.end(),
+          [&v](unsigned int i1,unsigned int i2) {return v[i1] > v[i2];});
+}
+return idx;
+}
+
+
 namespace caffe {
 
 template <typename TypeParam>
@@ -93,6 +114,40 @@ TYPED_TEST(NeuronLayerTest, TestAbsGradient) {
       this->blob_top_vec_);
 }
 
+ void TestTopKForward(const uint k = 10) {
+    LayerParameter layer_param;
+    layer_param.mutable_topk_param()->set_k(k);
+    Caffe::set_phase(Caffe::TRAIN);
+    TopKLayer<Dtype> layer(layer_param);
+    layer.SetUp(this->blob_bottom_vec_, &(this->blob_top_vec_));
+    layer.Forward(this->blob_bottom_vec_, &(this->blob_top_vec_));
+    // Now, check values
+    const Dtype* bottom_data = this->blob_bottom_->cpu_data();
+    const Dtype* top_data = this->blob_top_->cpu_data();
+    const int num = this->blob_bottom_->num();
+    const int single_count = this->blob_bottom_->count() / this->blob_bottom_->num();
+
+    for (int n = 0; n < num; ++n) {
+        std::vector<Dtype> values(single_count);
+        for (int c=0; c < single_count; c++) {
+         values[c] = bottom_data[c];
+        }
+        std::vector<unsigned int> idxs = sort_indexes(values,0);
+
+        for (int i = 0; i < k; ++i) {
+            EXPECT_EQ(top_data[idxs[i]], bottom_data[idxs[i]]);
+          }
+        for (int i = k; i < single_count; ++i) {
+            EXPECT_EQ(top_data[idxs[i]], Dtype(0));
+          }
+        bottom_data += this->blob_bottom_->offset(1);
+        top_data += this->blob_top_->offset(1);
+
+      }
+  }
+};
+
+
 TYPED_TEST(NeuronLayerTest, TestReLU) {
   typedef typename TypeParam::Dtype Dtype;
   LayerParameter layer_param;
@@ -158,6 +213,17 @@ TYPED_TEST(NeuronLayerTest, TestSigmoid) {
     EXPECT_GE(top_data[i], 0.);
     EXPECT_LE(top_data[i], 1.);
   }
+}
+
+TYPED_TEST(NeuronLayerTest, TestTopKTen) {
+  const int k = 10;
+  this->TestTopKForward(k);
+}
+
+
+TYPED_TEST(NeuronLayerTest, TestTopKFifty) {
+  const int k = 50;
+  this->TestTopKForward(k);
 }
 
 TYPED_TEST(NeuronLayerTest, TestSigmoidGradient) {
