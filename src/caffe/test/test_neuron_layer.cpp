@@ -87,14 +87,14 @@ class NeuronLayerTest : public MultiDeviceTest<TypeParam> {
     const Dtype empirical_dropout_ratio = 1 - num_kept / Dtype(count);
     EXPECT_NEAR(empirical_dropout_ratio, dropout_ratio, 1.96 * std_error);
   }
-  /*
-   void TestTopKForward(const uint k = 10) {
+    
+    void TestTopKForward(const unsigned int k = 10) {
     LayerParameter layer_param;
     layer_param.mutable_topk_param()->set_k(k);
     Caffe::set_phase(Caffe::TRAIN);
     TopKLayer<Dtype> layer(layer_param);
-    layer.SetUp(this->blob_bottom_vec_, &(this->blob_top_vec_));
-    layer.Forward(this->blob_bottom_vec_, &(this->blob_top_vec_));
+    layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
+    layer.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
     // Now, check values
     const Dtype* bottom_data = this->blob_bottom_->cpu_data();
     const Dtype* top_data = this->blob_top_->cpu_data();
@@ -119,8 +119,6 @@ class NeuronLayerTest : public MultiDeviceTest<TypeParam> {
 
       }
   }
-  */
-};
 
 };
 
@@ -148,8 +146,6 @@ TYPED_TEST(NeuronLayerTest, TestAbsGradient) {
   checker.CheckGradientEltwise(&layer, this->blob_bottom_vec_,
       this->blob_top_vec_);
 }
-
-
 
 TYPED_TEST(NeuronLayerTest, TestReLU) {
   typedef typename TypeParam::Dtype Dtype;
@@ -217,18 +213,7 @@ TYPED_TEST(NeuronLayerTest, TestSigmoid) {
     EXPECT_LE(top_data[i], 1.);
   }
 }
-/*
-TYPED_TEST(NeuronLayerTest, TestTopKTen) {
-  const int k = 10;
-  this->TestTopKForward(k);
-}
 
-
-TYPED_TEST(NeuronLayerTest, TestTopKFifty) {
-  const int k = 50;
-  this->TestTopKForward(k);
-}
-*/
 TYPED_TEST(NeuronLayerTest, TestSigmoidGradient) {
   typedef typename TypeParam::Dtype Dtype;
   LayerParameter layer_param;
@@ -278,6 +263,17 @@ TYPED_TEST(NeuronLayerTest, TestDropoutHalf) {
 TYPED_TEST(NeuronLayerTest, TestDropoutThreeQuarters) {
   const float kDropoutRatio = 0.75;
   this->TestDropoutForward(kDropoutRatio);
+}
+
+
+TYPED_TEST(NeuronLayerTest, TestTopKTen) {
+  const unsigned int k = 10;
+  this->TestTopKForward(k);
+}
+
+TYPED_TEST(NeuronLayerTest, TestTopKFifty) {
+  const unsigned int k = 50;
+  this->TestTopKForward(k);
 }
 
 TYPED_TEST(NeuronLayerTest, TestDropoutTestPhase) {
