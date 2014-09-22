@@ -11,40 +11,72 @@
 
 namespace caffe {
 
-template <typename T>
-std::vector<unsigned int> sort_indexes(const std::vector<T> &v, const int sortAscend = 1) {
+template <typename Container>
+struct compare_indirect_index_ascend
+  {
+  const Container& container;
+  compare_indirect_index_ascend( const Container& container ): container( container ) { }
+  bool operator () ( size_t lindex, size_t rindex ) const
+    {
+    return container[ lindex ] < container[ rindex ];
+    }
+  };
 
-  std::vector<unsigned int> idx(v.size());
-  for (unsigned int i = 0; i != idx.size(); ++i) {
+template <typename Container>
+struct compare_indirect_index_descend
+  {
+  const Container& container;
+  compare_indirect_index_descend( const Container& container ): container( container ) { }
+  bool operator () ( size_t lindex, size_t rindex ) const
+    {
+    return container[ lindex ] > container[ rindex ];
+    }
+  };
+
+template <typename T>
+std::vector<size_t> sort_indexes(const std::vector<T> &v, const int sortAscend = 1) {
+  std::vector<size_t> idx(v.size());
+  for (size_t i = 0; i != idx.size(); ++i) {
       idx[i] = i;
     }
   if (sortAscend) {
-     struct comparator_ascend {
-        comparator_ascend(const std::vector<T>* v__) {
-          v_ = v__;
-        }
-        bool operator () (unsigned int i1,unsigned int i2) {
-          return (*v_)[i1] < (*v_)[i2];
-        }
-         const std::vector<T>* v_;
-      };
-      std::sort(idx.begin(), idx.end(),comparator_ascend(&v));
+      std::sort(idx.begin(), idx.end(),compare_indirect_index_ascend <std::vector<T> > ( v ) );
   }
   else {
-      struct comparator_descend {
-        comparator_descend(const std::vector<T>* v__) {
-          v_ = v__;
-        }
-        bool operator () (unsigned int i1,unsigned int i2) {
-          return (*v_)[i1] < (*v_)[i2];
-        }
-      const std::vector<T>* v_;
-      };
-std::sort(idx.begin(), idx.end(),comparator_descend(&v));
+      std::sort(idx.begin(), idx.end(),compare_indirect_index_descend <std::vector<T> > ( v ) );
   }
   return idx;
 }
   
+//  template <typename T>
+//  vector<size_t> sort_indexes(const vector<T> &v, const int sortAscend = 1) {
+
+//    // initialize original index locations
+//    vector<size_t> idx(v.size());
+//    for (size_t i = 0; i != idx.size(); ++i) idx[i] = i;
+
+//    // sort indexes based on comparing values in v
+//     if (sortAscend) {
+//    sort(idx.begin(), idx.end(),
+//         [&v](size_t i1, size_t i2) {return v[i1] < v[i2];});
+//       }
+//     else{
+//         sort(idx.begin(), idx.end(),
+//              [&v](size_t i1, size_t i2) {return v[i1] > v[i2];});
+//       }
+//    return idx;
+//  }
+
+template <typename Dtype>
+void TopKLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top) {
+  NeuronLayer<Dtype>::Reshape(bottom, top);
+  idxs_.Reshape(1, bottom[0]->channels(),
+        bottom[0]->height(), bottom[0]->width());
+  mask_.Reshape(bottom[0]->num(), bottom[0]->channels(),
+        bottom[0]->height(), bottom[0]->width());
+}
+
 template <typename Dtype>
 void TopKLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
                                   const vector<Blob<Dtype>*>& top) {
@@ -59,10 +91,6 @@ void TopKLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
 
   DCHECK(uint_k_ > 0);
   DCHECK(uint_k_ <= bottom[0]->count() / bottom[0]->num());
-  idxs_.Reshape(1, bottom[0]->channels(),
-        bottom[0]->height(), bottom[0]->width());
-    mask_.Reshape(bottom[0]->num(), bottom[0]->channels(),
-        bottom[0]->height(), bottom[0]->width());
   }
 
   template <typename Dtype>
@@ -71,33 +99,35 @@ void TopKLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
     const Dtype* bottom_data = bottom[0]->cpu_data();
     Dtype* top_data = top[0]->mutable_cpu_data();
 
-    unsigned int* mask = mask_.mutable_cpu_data();
+    uint* mask = mask_.mutable_cpu_data();
 
     const int count = bottom[0]->count();
+    const int num = bottom[0]->num();
     const int single_count = bottom[0]->count() / bottom[0]->num();
 
     caffe_set(count, Dtype(0), top_data);
 
-    for (uint i = 0; i < count; ++i) {
+    for (int i = 0; i < count; ++i) {
         mask[i] = 0;
       }
-    const int num = bottom[0]->num();
+
     for (int n = 0; n < num; ++n) {
             std::vector<Dtype> values;
             values.assign(bottom_data, bottom_data + single_count);
 
-            std::vector<unsigned int> idxs = sort_indexes(values,0);
+            std::vector<size_t> idxs = sort_indexes(values,0);
 
-            for (uint i = 0; i < uint_k_; ++i) {
+            for (size_t i = 0; i < uint_k_; ++i) {
                 top_data[idxs[i]] =  bottom_data[idxs[i]];
-                mask[idxs[i]] = 1;
+                mask[idxs[i]] = static_cast<uint>(1);
               }
+            mask += mask_.offset(1);
             bottom_data += bottom[0]->offset(1);
             top_data += top[0]->offset(1);
-            mask += mask_.offset(1);
 
           }
       }
+
   template <typename Dtype>
   void TopKLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
                                       const vector<bool>& propagate_down,
