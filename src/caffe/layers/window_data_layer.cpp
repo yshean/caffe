@@ -30,7 +30,7 @@ WindowDataLayer<Dtype>::~WindowDataLayer<Dtype>() {
 
 template <typename Dtype>
 void WindowDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      vector<Blob<Dtype>*>* top) {
+      const vector<Blob<Dtype>*>& top) {
   // LayerSetUp runs through the window_file and creates two structures
   // that hold windows: one for foreground (object) windows and one
   // for background (non-object) windows. We use an overlap threshold
@@ -55,8 +55,8 @@ void WindowDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
       << this->layer_param_.window_data_param().fg_fraction();
 
   const bool prefetch_needs_rand =
-      this->layer_param_.window_data_param().mirror() ||
-      this->layer_param_.window_data_param().crop_size();
+      this->transform_param_.mirror() ||
+      this->transform_param_.crop_size();
   if (prefetch_needs_rand) {
     const unsigned int prefetch_rng_seed = caffe_rng_rand();
     prefetch_rng_.reset(new Caffe::RNG(prefetch_rng_seed));
@@ -149,17 +149,23 @@ void WindowDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
       << this->layer_param_.window_data_param().crop_mode();
 
   // image
-  int crop_size = this->layer_param_.window_data_param().crop_size();
+  const int crop_size = this->transform_param_.crop_size();
   CHECK_GT(crop_size, 0);
   const int batch_size = this->layer_param_.window_data_param().batch_size();
-  (*top)[0]->Reshape(batch_size, channels, crop_size, crop_size);
+  top[0]->Reshape(batch_size, channels, crop_size, crop_size);
   this->prefetch_data_.Reshape(batch_size, channels, crop_size, crop_size);
 
-  LOG(INFO) << "output data size: " << (*top)[0]->num() << ","
-      << (*top)[0]->channels() << "," << (*top)[0]->height() << ","
-      << (*top)[0]->width();
+  LOG(INFO) << "output data size: " << top[0]->num() << ","
+      << top[0]->channels() << "," << top[0]->height() << ","
+      << top[0]->width();
+  // datum size
+  this->datum_channels_ = top[0]->channels();
+  this->datum_height_ = top[0]->height();
+  this->datum_width_ = top[0]->width();
+  this->datum_size_ =
+      top[0]->channels() * top[0]->height() * top[0]->width();
   // label
-  (*top)[1]->Reshape(batch_size, 1, 1, 1);
+  top[1]->Reshape(batch_size, 1, 1, 1);
   this->prefetch_label_.Reshape(batch_size, 1, 1, 1);
 }
 
@@ -181,9 +187,9 @@ void WindowDataLayer<Dtype>::InternalThreadEntry() {
   Dtype* top_label = this->prefetch_label_.mutable_cpu_data();
   const Dtype scale = this->layer_param_.window_data_param().scale();
   const int batch_size = this->layer_param_.window_data_param().batch_size();
-  const int crop_size = this->layer_param_.window_data_param().crop_size();
   const int context_pad = this->layer_param_.window_data_param().context_pad();
-  const bool mirror = this->layer_param_.window_data_param().mirror();
+  const int crop_size = this->transform_param_.crop_size();
+  const bool mirror = this->transform_param_.mirror();
   const float fg_fraction =
       this->layer_param_.window_data_param().fg_fraction();
   const Dtype* mean = this->data_mean_.cpu_data();
