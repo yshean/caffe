@@ -1,7 +1,7 @@
 // TODO (sergeyk): effect should not be dependent on phase. wasted memcpy.
 
+#include <algorithm>
 #include <vector>
-#include <boost/type_traits.hpp>
 
 #include "caffe/common.hpp"
 #include "caffe/layer.hpp"
@@ -12,60 +12,43 @@
 namespace caffe {
 
 template <typename Container>
-struct compare_indirect_index_ascend
-  {
+struct compare_indirect_index_ascend  {
   const Container& container;
-  compare_indirect_index_ascend( const Container& container ): container( container ) { }
-  bool operator () ( size_t lindex, size_t rindex ) const
-    {
-    return container[ lindex ] < container[ rindex ];
+  explicit compare_indirect_index_ascend(const Container& container):
+  container(container) {
+  }
+  bool operator()(size_t lindex, size_t rindex) const {
+    return container[lindex] < container[rindex];
     }
-  };
+};
 
 template <typename Container>
-struct compare_indirect_index_descend
-  {
+struct compare_indirect_index_descend {
   const Container& container;
-  compare_indirect_index_descend( const Container& container ): container( container ) { }
-  bool operator () ( size_t lindex, size_t rindex ) const
-    {
-    return container[ lindex ] > container[ rindex ];
+  explicit compare_indirect_index_descend(const Container& container):
+  container(container)  {
+  }
+  bool operator()(size_t lindex, size_t rindex) const {
+    return container[lindex] > container[rindex];
     }
-  };
+};
 
 template <typename T>
-std::vector<size_t> sort_indexes(const std::vector<T> &v, const int sortAscend = 1) {
+std::vector<size_t> sort_indexes(const std::vector<T> &v,
+                                 const int sortAscend = 1) {
   std::vector<size_t> idx(v.size());
   for (size_t i = 0; i != idx.size(); ++i) {
       idx[i] = i;
     }
   if (sortAscend) {
-      std::sort(idx.begin(), idx.end(),compare_indirect_index_ascend <std::vector<T> > ( v ) );
-  }
-  else {
-      std::sort(idx.begin(), idx.end(),compare_indirect_index_descend <std::vector<T> > ( v ) );
+      std::sort(idx.begin(), idx.end(),
+                compare_indirect_index_ascend <std::vector<T> > (v));
+  } else {
+      std::sort(idx.begin(), idx.end(),
+                compare_indirect_index_descend <std::vector<T> > (v));
   }
   return idx;
 }
-  
-//  template <typename T>
-//  vector<size_t> sort_indexes(const vector<T> &v, const int sortAscend = 1) {
-
-//    // initialize original index locations
-//    vector<size_t> idx(v.size());
-//    for (size_t i = 0; i != idx.size(); ++i) idx[i] = i;
-
-//    // sort indexes based on comparing values in v
-//     if (sortAscend) {
-//    sort(idx.begin(), idx.end(),
-//         [&v](size_t i1, size_t i2) {return v[i1] < v[i2];});
-//       }
-//     else{
-//         sort(idx.begin(), idx.end(),
-//              [&v](size_t i1, size_t i2) {return v[i1] > v[i2];});
-//       }
-//    return idx;
-//  }
 
 template <typename Dtype>
 void TopKLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
@@ -83,13 +66,12 @@ void TopKLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   NeuronLayer<Dtype>::LayerSetUp(bottom, top);
   if (Caffe::phase() == Caffe::TRAIN) {
   uint_k_ = this->layer_param_.topk_param().k();
-  }
-  else
-  {
-  uint_k_ = this->layer_param_.topk_param().k() * this->layer_param_.topk_param().a();
+  } else {
+  uint_k_ = this->layer_param_.topk_param().k() *
+            this->layer_param_.topk_param().a();
   }
 
-  DCHECK(uint_k_ > 0);
+  DCHECK_GT(uint_k_, 0);
   DCHECK(uint_k_ <= bottom[0]->count() / bottom[0]->num());
   }
 
@@ -115,7 +97,7 @@ void TopKLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
             std::vector<Dtype> values;
             values.assign(bottom_data, bottom_data + single_count);
 
-            std::vector<size_t> idxs = sort_indexes(values,0);
+            std::vector<size_t> idxs = sort_indexes(values, 0);
 
             for (size_t i = 0; i < uint_k_; ++i) {
                 top_data[idxs[i]] =  bottom_data[idxs[i]];
@@ -124,7 +106,6 @@ void TopKLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
             mask += mask_.offset(1);
             bottom_data += bottom[0]->offset(1);
             top_data += top[0]->offset(1);
-
           }
       }
 
