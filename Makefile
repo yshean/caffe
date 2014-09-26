@@ -1,6 +1,6 @@
 # The makefile for caffe. Pretty hacky.
 PROJECT := caffe
-CPU_ONLY :=1
+#CPU_ONLY :=1
 CONFIG_FILE := Makefile.config
 include $(CONFIG_FILE)
 
