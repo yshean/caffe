@@ -102,7 +102,6 @@ void TopKLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
     caffe_set(count, Dtype(0), top_data);
     caffe_memset(sizeof(uint) * count, 0, mask);
 
-    if (uint_k > 1) {
     if (channels4norm > 1) {  // For convolutional layers
         for (int n = 0; n < num; ++n) {
 	    for (int c = 0; c < channels; ++c) {
@@ -150,8 +149,7 @@ void TopKLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
             bottom_data += bottom[0]->offset(1);
             top_data += top[0]->offset(1);
           }
-      }
-      }
+      }    
   }
 
   template <typename Dtype>

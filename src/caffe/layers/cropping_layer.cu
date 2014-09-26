@@ -24,7 +24,7 @@ __global__ void CroppingForward(const int count, const Dtype* in, Dtype* out,
 
 template <typename Dtype>
 void CroppingLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-    const vector<Blob<Dtype>*>& top) {
+      const vector<Blob<Dtype>*>& top) {
   const Dtype* bottom_data = bottom[0]->gpu_data();
   Dtype* top_data = top[0]->mutable_gpu_data();
   const int count = top[0]->count();
@@ -54,13 +54,13 @@ __global__ void CroppingBackward(const int count, const Dtype* in, Dtype* out,
 
 template <typename Dtype>
 void CroppingLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
-    const bool propagate_down,
+    const vector<bool>& propagate_down,
     const vector<Blob<Dtype>*>& bottom) {
-  if (propagate_down) {
+  if (propagate_down[0]) {
     const Dtype* top_diff = top[0]->gpu_diff();
     Dtype* bottom_diff = bottom[0]->mutable_gpu_diff();
     const int count = top[0]->count();
-    CUDA_CHECK(cudaMemset(bottom_diff, 0, sizeof(Dtype) * (*bottom)[0]->count()));
+    CUDA_CHECK(cudaMemset(bottom_diff, 0, sizeof(Dtype) * bottom[0]->count()));
     CroppingBackward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
         count, top_diff, bottom_diff, NUM_, CHANNEL_, HEIGHT_IN_, WIDTH_IN_,
         STARTX_, STARTY_, HEIGHT_OUT_, WIDTH_OUT_);
@@ -68,5 +68,7 @@ void CroppingLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
   }
   return ;
 }
+
+INSTANTIATE_CLASS(CroppingLayer);
 
 }  // namespace caffe

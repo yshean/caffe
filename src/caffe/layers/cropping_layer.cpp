@@ -85,7 +85,7 @@ void CroppingLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
 }
 
 #ifdef CPU_ONLY
-STUB_GPU(ConvolutionLayer);
+STUB_GPU(CroppingLayer);
 #endif
 
 INSTANTIATE_CLASS(CroppingLayer);
