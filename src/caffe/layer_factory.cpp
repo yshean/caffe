@@ -193,6 +193,8 @@ Layer<Dtype>* GetLayer(const LayerParameter& param) {
     return new ContrastiveLossLayer<Dtype>(param);
   case LayerParameter_LayerType_CONVOLUTION:
     return GetConvolutionLayer<Dtype>(name, param);
+  case LayerParameter_LayerType_CROPPING:
+    return new CroppingLayer<Dtype>(param);
   case LayerParameter_LayerType_DATA:
     return new DataLayer<Dtype>(param);
   case LayerParameter_LayerType_DROPOUT:
