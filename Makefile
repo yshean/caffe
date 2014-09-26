@@ -1,6 +1,6 @@
 # The makefile for caffe. Pretty hacky.
 PROJECT := caffe
-
+CPU_ONLY :=1
 CONFIG_FILE := Makefile.config
 include $(CONFIG_FILE)
 
@@ -226,9 +226,9 @@ else ifeq ($(UNAME), Darwin)
 endif
 
 ifeq ($(LINUX), 1)
-#	CXX := /usr/bin/g++
-	CXX := /usr/bin/g++-4.4 
-#for solve  "error: kernel launches from templates are not allowed in system files"
+	CXX := /usr/bin/g++
+#	CXX ?= /usr/bin/g++
+
 	GCCVERSION := $(shell $(CXX) -dumpversion | cut -f1,2 -d.)
 	# older versions of gcc are too dumb to build boost with -Wuninitalized
 	ifeq ($(shell echo $(GCCVERSION) \< 4.6 | bc), 1)
@@ -263,7 +263,7 @@ ifeq ($(DEBUG), 1)
 	COMMON_FLAGS += -DDEBUG -g -O0
 	NVCCFLAGS += -G
 else
-	COMMON_FLAGS += -DNDEBUG -O2
+	COMMON_FLAGS += -DNDEBUG -O2 -std=c++11
 endif
 
 # cuDNN acceleration configuration.
@@ -293,7 +293,7 @@ ifeq ($(BLAS), mkl)
 	BLAS_LIB ?= $(MKL_DIR)/lib $(MKL_DIR)/lib/intel64
 else ifeq ($(BLAS), open)
 	# OpenBLAS
-	LIBRARIES += blas
+	LIBRARIES += openblas
 else
 	# ATLAS
 	ifeq ($(LINUX), 1)

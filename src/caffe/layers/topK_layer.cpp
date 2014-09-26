@@ -96,38 +96,38 @@ void TopKLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
     const int count = bottom[0]->count();
     const int num = bottom[0]->num();
     const int channels = bottom[0]->channels();
-    const int height = bottom[0]->height();
-    const int width = bottom[0]->width();
+    const int hw = bottom[0]->height()*bottom[0]->width();
     const int single_count = bottom[0]->count() / bottom[0]->num();
 
     caffe_set(count, Dtype(0), top_data);
     caffe_memset(sizeof(uint) * count, 0, mask);
 
+    if (uint_k > 1) {
     if (channels4norm > 1) {  // For convolutional layers
         for (int n = 0; n < num; ++n) {
-            for (int h = 0; h < height; ++h) {
-                for (int w = 0; w < width; ++w) {
-                std::vector<Dtype> vals(channels);
-                std::vector<size_t> idxs(channels);
-                for (int c = 0; c < channels; ++c) {
-                    const size_t idx = (c * height + h) * width + w;
-                    idxs[c] = idx;
-                    vals[c] = bottom_data[idx];
-                  }
-    #if __cplusplus > 199711L
+	    for (int c = 0; c < channels; ++c) {
+            //for (int h = 0; h < height; ++h) {
+            //    for (int w = 0; w < width; ++w) {
+                std::vector<Dtype> vals(hw);
+                vals.assign(bottom_data, bottom_data + hw);
+                std::vector<size_t> idxs(vals.size());
+                for (size_t i = 0; i != idxs.size(); ++i) {
+                idxs[i] = i;
+                 }
+#if __cplusplus > 199711L
                 kth_element_idxs(vals, idxs, uint_k_, 0);
-    #else
+#else
                 sort_idxs(vals, idxs, 0);
-    #endif
+#endif
                 for (size_t i = 0; i < uint_k_; ++i) {
                     top_data[idxs[i]] =  bottom_data[idxs[i]];
                     mask[idxs[i]] = static_cast<uint>(1);
                   }
-                }
+ //               }
+             mask += mask_.offset(0,1);
+             bottom_data += bottom[0]->offset(0,1);
+             top_data += top[0]->offset(0,1);
               }
-           mask += mask_.offset(1);
-           bottom_data += bottom[0]->offset(1);
-           top_data += top[0]->offset(1);
           }
       } else {  // For full-connected layers
     for (int n = 0; n < num; ++n) {
@@ -152,6 +152,7 @@ void TopKLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
           }
       }
       }
+  }
 
   template <typename Dtype>
   void TopKLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
